@@ -169,7 +169,7 @@ cargo build --release
 ./bin/kn set-style 输入.key 输出.key 7031016 bold=true
 
 ./bin/kn set-shape-geometry 输入.key 输出.key 3 2 x=100 y=200 w=600 h=120 angle=15
-./bin/kn dup-shape 输入.key 输出.key 3 2 --offset 40,40
+./bin/kn dup-shape 输入.key 输出.key 3 3 --offset 40,40
 ./bin/kn del-shape 输入.key 输出.key 3 2
 
 ./bin/kn group   输入.key 输出.key 3 "2,3"
@@ -179,6 +179,7 @@ cargo build --release
 - **形状路径从 0 开始**：`2` 表示第 3 个顶层对象；`3/1` 表示第 4 个顶层群组里的
   第 2 个子对象。
 - `set-shape` 只处理纯色填充；渐变/图片填充会明确报错。
+- `dup-shape` 支持图片与普通形状；表格对象请用表格命令，占位符请复制整页。
 - `set-style` 一次只改一个属性：`font_size=48`、`bold=true`、`italic=false`、
   `font_color=#FF0000`。
 - 打组不要包含标题/正文占位符，否则占位符身份会丢失；先用 `outline` 确认对象。

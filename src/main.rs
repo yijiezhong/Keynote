@@ -951,9 +951,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut body; let mut header; let mut footer; let mut hc; let mut band;
             body = None; header = None; footer = None; hc = None; band = None;
             let mut hr = 0i64;
+            let mut no_band = false;
             let mut i = 4usize;
             while i < args.len() {
                 let key = args[i].as_str();
+                if key == "--no-band" {
+                    no_band = true;
+                    i += 1;
+                    continue;
+                }
                 if i + 1 >= args.len() { return Err("参数缺值".into()); }
                 let v = args[i + 1].clone();
                 match key {
@@ -964,6 +970,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 i += 2;
             }
+            if no_band { band = None; }
             apple::set_table_fill(&args[1], &args[2], ident, body.as_deref(), header.as_deref(), footer.as_deref(), hc.as_deref(), band.as_deref(), hr).map_err(|e| e.to_string())?;
             println!("已写出 {}", args[2]);
             Ok(())

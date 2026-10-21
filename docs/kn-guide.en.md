@@ -173,7 +173,7 @@ Notes:
 ./bin/kn set-style in.key out.key 7031016 bold=true
 
 ./bin/kn set-shape-geometry in.key out.key 3 2 x=100 y=200 w=600 h=120 angle=15
-./bin/kn dup-shape in.key out.key 3 2 --offset 40,40
+./bin/kn dup-shape in.key out.key 3 3 --offset 40,40
 ./bin/kn del-shape in.key out.key 3 2
 
 ./bin/kn group   in.key out.key 3 "2,3"
@@ -183,6 +183,7 @@ Notes:
 - **Shape paths are 0-based**: `2` is the third top-level object; `3/1` is the
   second child of the fourth top-level group.
 - `set-shape` only handles a solid fill. Gradient or image fills produce an error.
+- `dup-shape` supports images and ordinary shapes; use table commands for tables and duplicate a page for placeholders.
 - `set-style` changes one property at a time: `font_size=48`, `bold=true`,
   `italic=false`, `font_color=#FF0000`.
 - Do not group title/body placeholders: grouping removes their placeholder identity.

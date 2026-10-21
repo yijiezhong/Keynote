@@ -328,12 +328,16 @@ pub fn duplicate_shape(src: &str, dst: &str, page: usize, path: &str, dx: f32, d
             let mut m = <tsd::ImageArchive as Message>::decode(old.as_slice()).map_err(|e| e.to_string())?;
             m.super_.parent = Some(pref); bump(&mut m.super_.geometry, dx, dy); m.encode_to_vec()
         }
-        "TST.TableInfoArchive" => {
-            let mut m = <tst::TableInfoArchive as Message>::decode(old.as_slice()).map_err(|e| e.to_string())?;
-            m.super_.parent = Some(pref); bump(&mut m.super_.geometry, dx, dy); m.encode_to_vec()
-        }
+        "TST.TableInfoArchive" => return Err("dup-shape 暂不支持表格；请先用表格相关命令处理".into()),
         "TSWP.ShapeInfoArchive" => {
             let mut m = <tswp::ShapeInfoArchive as Message>::decode(old.as_slice()).map_err(|e| e.to_string())?;
+            if let Some(parent) = m.super_.super_.parent.as_ref() {
+                if let Some((pt, _)) = map.get(&parent.identifier) {
+                    if schema::type_name(*pt) == Some("KN.PlaceholderArchive") {
+                        return Err("占位符形状不能单独复制；请复制它所在的页".into());
+                    }
+                }
+            }
             m.super_.super_.parent = Some(pref); bump(&mut m.super_.super_.geometry, dx, dy); m.encode_to_vec()
         }
         _ => return Err(format!("dup-shape 暂不支持 {name}")),
