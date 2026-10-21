@@ -78,3 +78,44 @@ pub fn set_cell(src: &str, dst: &str, ident: u64, row: u32, col: u32, value: &st
     println!("表格 {ident} 第 {row} 行第 {col} 列：{old} → {new}");
     Ok(())
 }
+
+
+pub fn set_size(
+    src: &str,
+    dst: &str,
+    ident: u64,
+    row_height: Option<f32>,
+    col_width: Option<f32>,
+) -> Result<(), String> {
+    let mut docs = write::load_docs(src)?;
+    let map = write::ident_map(&docs);
+    let (_, tb) = map.get(&ident).ok_or(format!("找不到表格 {ident}"))?;
+    let mut tm = <tst::TableModelArchive as Message>::decode(tb.as_slice())
+        .map_err(|_| format!("ident {ident} 不是表格"))?;
+    if let Some(h) = row_height { tm.default_row_height = h as f64; }
+    if let Some(w) = col_width { tm.default_column_width = w as f64; }
+
+    let col_id = tm.base_data_store.column_headers.identifier;
+    let row_ids: Vec<u64> = tm.base_data_store.row_headers.buckets.iter().map(|r| r.identifier).collect();
+    let (ti, tsi, toi) = write::find_object(&docs, ident, "").ok_or("未定位到表格对象")?;
+    docs[ti].segs[tsi].objs[toi] = tm.encode_to_vec();
+
+    let mut update_header = |id: u64, value: f32| -> Result<(), String> {
+        let Some((di, si, oi)) = write::find_object(&docs, id, "header") else { return Ok(()) };
+        let mut hb = <tst::HeaderStorageBucket as Message>::decode(docs[di].segs[si].objs[oi].as_slice())
+            .map_err(|e| e.to_string())?;
+        for h in &mut hb.headers { h.size = value; }
+        docs[di].segs[si].objs[oi] = hb.encode_to_vec();
+        Ok(())
+    };
+    if let Some(w) = col_width { update_header(col_id, w)?; }
+    if let Some(h) = row_height {
+        for rid in row_ids { update_header(rid, h)?; }
+    }
+    write::save_docs(src, dst, &docs)?;
+    let mut parts = Vec::new();
+    if let Some(h) = row_height { parts.push(format!("行高 {h}")); }
+    if let Some(w) = col_width { parts.push(format!("列宽 {w}")); }
+    println!("表格 {ident}：{}", parts.join("、"));
+    Ok(())
+}

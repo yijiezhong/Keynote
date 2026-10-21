@@ -493,6 +493,7 @@ fn usage() {
     println!("  kn skip <src> <dst> <页码|1-3,7> [--off]");
     println!("  kn skip-many <src> <dst> <表达式> [--off]");
     println!("  kn tables <deck.key>            列出表格 ident/行列");
+    println!("  kn set-table-size <src> <dst> <ident> [--row-height H] [--col-width W]");
     println!("  kn set-cell <src> <dst> <ident> <行> <列> <新值>");
     println!("  kn insert-image-paste <src> <dst> <页码> <图片>");
     println!("  kn change-layout <src> <dst> <页码> <版式>");
@@ -691,6 +692,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some("outline") => {
             let p = args.get(1).ok_or("缺少文件")?;
             outline(p)
+        }
+        Some("set-table-size") => {
+            if args.len() < 4 {
+                eprintln!("用法: kn set-table-size <src> <dst> <ident> [--row-height H] [--col-width W]");
+                std::process::exit(2);
+            }
+            let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
+            let mut rh: Option<f32> = None;
+            let mut cw: Option<f32> = None;
+            let mut i = 4usize;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--row-height" if i + 1 < args.len() => { rh = Some(args[i + 1].parse().map_err(|_| "行高不是数字")?); i += 2; }
+                    "--col-width" if i + 1 < args.len() => { cw = Some(args[i + 1].parse().map_err(|_| "列宽不是数字")?); i += 2; }
+                    _ => { eprintln!("未知参数：{}", args[i]); std::process::exit(2); }
+                }
+            }
+            table::set_size(&args[1], &args[2], ident, rh, cw).map_err(|e| e.to_string())?;
+            println!("已写出 {}", args[2]);
+            Ok(())
         }
         Some("skip") | Some("skip-many") => {
             if args.len() < 4 {

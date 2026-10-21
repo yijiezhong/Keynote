@@ -141,6 +141,9 @@ pub fn find_object(docs: &[Doc], ident: u64, type_hint: &str) -> Option<(usize, 
                 if type_hint == "slide" && <kn::SlideNodeArchive as Message>::decode(obj.as_slice()).is_ok() {
                     return Some((di, si, oi));
                 }
+                if type_hint == "header" && <tst::HeaderStorageBucket as Message>::decode(obj.as_slice()).is_ok() {
+                    return Some((di, si, oi));
+                }
                 if type_hint == "" {
                     return Some((di, si, oi));
                 }
