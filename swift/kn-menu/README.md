@@ -19,9 +19,14 @@ KN_BIN=/path/to/Keynote/bin/kn ./kn-menu
 
 ## Status
 
-The Swift shell is wired to the Rust CLI, but only commands currently implemented by the
-Rust binary will work. In phase 1 that means `verify`; `outline` / `text` / `add-slide`
-menu items will start working as those commands are ported.
+The Swift shell is wired to the Rust CLI (56 commands). The menu exposes read-only
+inspections (`outline`, `text`, `tables`, `links`, `colors`, `styles`, `charts`,
+`images`, `verify`), page operations (`add-slide`, `del-slide`, `dup-slide`), and
+common writes (`set-text` title, `append-note`, `skip`). `全部命令帮助` shows the
+full CLI help.
+
+All file-changing menu actions write a new copy (`-del.key`, `-title.key`, …); the
+source document is never overwritten by the menu shell.
 
 ## Known limitation
 

@@ -54,7 +54,7 @@ class KnDelegate: NSObject, NSApplicationDelegate {
         // 实测：isVisible / length / title 三者一旦变过都无法恢复，
         // 所以状态项常驻，只用「菜单项是否可点 + 标题后缀」表达 Keynote 状态
         item?.button?.title = running ? "kn" : ""
-        for mi in item?.menu?.items ?? [] where !mi.isSeparatorItem && mi.action != #selector(quit) {
+        for mi in item?.menu?.items ?? [] where !mi.isSeparatorItem && mi.action != #selector(quit) && mi.action != #selector(cmdHelp) {
             mi.isEnabled = running
         }
     }
@@ -80,10 +80,23 @@ class KnDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         add(menu, "大纲 outline", #selector(cmdOutline))
         add(menu, "文字 text", #selector(cmdText))
+        add(menu, "表格 tables", #selector(cmdTables))
+        add(menu, "链接 links", #selector(cmdLinks))
+        add(menu, "颜色 colors", #selector(cmdColors))
+        add(menu, "样式 styles", #selector(cmdStyles))
+        add(menu, "图表 charts", #selector(cmdCharts))
+        add(menu, "图片 images", #selector(cmdImages))
         add(menu, "校验 verify", #selector(cmdVerify))
         menu.addItem(NSMenuItem.separator())
         add(menu, "新增一页（Keynote 路径）…", #selector(cmdAddSlide))
+        add(menu, "删除一页…", #selector(cmdDeleteSlide))
+        add(menu, "复制一页…", #selector(cmdDupSlide))
         menu.addItem(NSMenuItem.separator())
+        add(menu, "设置第 1 页标题…", #selector(cmdSetTitle))
+        add(menu, "追加第 1 页备注…", #selector(cmdAppendNote))
+        add(menu, "跳过某页…", #selector(cmdSkip))
+        menu.addItem(NSMenuItem.separator())
+        add(menu, "全部命令帮助", #selector(cmdHelp))
         add(menu, "退出", #selector(quit))
         return menu
     }
@@ -109,6 +122,68 @@ class KnDelegate: NSObject, NSApplicationDelegate {
         runProcess(KN_BIN, ["add-slide", path, out, "标题项目符号"]) { text in
             self.showResult("kn add-slide", text)
         }
+    }
+
+    @objc func cmdTables() { runKn(["tables"]) }
+    @objc func cmdLinks() { runKn(["links"]) }
+    @objc func cmdColors() { runKn(["colors"]) }
+    @objc func cmdStyles() { runKn(["styles"]) }
+    @objc func cmdCharts() { runKn(["charts"]) }
+    @objc func cmdImages() { runKn(["images"]) }
+
+    @objc func cmdDeleteSlide() {
+        guard let path = keynotePath(), let page = prompt("删除一页", "页码（从 1 开始）") else { return }
+        let out = outputPath(path, "-del.key")
+        runProcess(KN_BIN, ["del-slide", path, out, page]) { self.showResult("kn del-slide", $0) }
+    }
+
+    @objc func cmdDupSlide() {
+        guard let path = keynotePath(), let page = prompt("复制一页", "页码（从 1 开始）") else { return }
+        let out = outputPath(path, "-dup.key")
+        runProcess(KN_BIN, ["dup-slide", path, out, page]) { self.showResult("kn dup-slide", $0) }
+    }
+
+    @objc func cmdSetTitle() {
+        guard let path = keynotePath(), let title = prompt("设置第 1 页标题", "新标题") else { return }
+        let out = outputPath(path, "-title.key")
+        runProcess(KN_BIN, ["set-text", path, out, "1", "title", title]) { self.showResult("kn set-text", $0) }
+    }
+
+    @objc func cmdAppendNote() {
+        guard let path = keynotePath(), let text = prompt("追加第 1 页备注", "要追加的文字") else { return }
+        let out = outputPath(path, "-note.key")
+        runProcess(KN_BIN, ["append-note", path, out, "1", text]) { self.showResult("kn append-note", $0) }
+    }
+
+    @objc func cmdSkip() {
+        guard let path = keynotePath(), let page = prompt("跳过一页", "页码（从 1 开始）") else { return }
+        let out = outputPath(path, "-skip.key")
+        runProcess(KN_BIN, ["skip", path, out, page]) { self.showResult("kn skip", $0) }
+    }
+
+    @objc func cmdHelp() {
+        runProcess(KN_BIN, ["help"]) { self.showResult("kn help", $0) }
+    }
+
+    func prompt(_ title: String, _ message: String) -> String? {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.addButton(withTitle: "确定")
+        alert.addButton(withTitle: "取消")
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+        let value = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? nil : value
+    }
+
+    func outputPath(_ path: String, _ suffix: String) -> String {
+        if path.hasSuffix(".key") {
+            return String(path.dropLast(4)) + suffix
+        }
+        return path + suffix
     }
 
     func runKn(_ args: [String]) {
