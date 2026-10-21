@@ -79,3 +79,15 @@ pub fn builds(path: &str, detail: bool) -> Result<(), String> {
     }
     Ok(())
 }
+
+
+pub fn set_link(src: &str, dst: &str, ident: u64, url: &str) -> Result<(), String> {
+    let docs = write::load_docs(src)?;
+    let (di, si, oi) = write::find_object(&docs, ident, "link").ok_or("找不到链接对象")?;
+    let mut m = <tswp::HyperlinkFieldArchive as Message>::decode(
+        docs[di].segs[si].objs[oi].as_slice()).map_err(|e| e.to_string())?;
+    m.url_ref = Some(url.to_string());
+    write::save_rewrite(src, dst, &docs[di].name, si, oi, &m.encode_to_vec())?;
+    println!("超链接 {ident} → {url}");
+    Ok(())
+}

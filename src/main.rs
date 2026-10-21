@@ -495,6 +495,7 @@ fn usage() {
     println!("  kn skip <src> <dst> <页码|1-3,7> [--off]");
     println!("  kn skip-many <src> <dst> <表达式> [--off]");
     println!("  kn tables <deck.key>            列出表格 ident/行列");
+    println!("  kn add-col <src> <dst> <ident> [--at N]");
     println!("  kn add-row <src> <dst> <ident> <源行> [--at N]");
     println!("  kn del-row <src> <dst> <ident> <行>");
     println!("  kn set-table-size <src> <dst> <ident> [--row-height H] [--col-width W]");
@@ -503,6 +504,7 @@ fn usage() {
     println!("  kn dup-slide <src> <dst> <页码>");
     println!("  kn links <deck.key>");
     println!("  kn builds <deck.key> / builds-list");
+    println!("  kn set-link <src> <dst> <ident> <url>");
     println!("  kn transitions <deck.key>");
     println!("  kn audit <deck.key>");
     println!("  kn check-notes <deck.key> [--require 文本]");
@@ -690,6 +692,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let p = args.get(1).ok_or("缺少文件")?;
             outline(p)
         }
+        Some("add-col") => {
+            if args.len() < 4 {
+                eprintln!("用法: kn add-col <src> <dst> <ident> [--at N]");
+                std::process::exit(2);
+            }
+            let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
+            let at = if args.len() >= 6 && args[4] == "--at" { Some(args[5].parse().map_err(|_| "--at 不是整数")?) } else { None };
+            table::add_col(&args[1], &args[2], ident, at).map_err(|e| e.to_string())?;
+            println!("已写出 {}", args[2]);
+            Ok(())
+        }
         Some("add-row") | Some("del-row") => {
             if args.len() < 5 {
                 eprintln!("用法: kn add-row <src> <dst> <ident> <源行> [--at N] / kn del-row <src> <dst> <ident> <行>");
@@ -771,6 +784,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some("links") => {
             let p = args.get(1).ok_or("缺少文件")?;
             inspect2::links(p).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("set-link") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn set-link <src> <dst> <ident> <url>");
+                std::process::exit(2);
+            }
+            let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
+            inspect2::set_link(&args[1], &args[2], ident, &args[4]).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("transitions") => {

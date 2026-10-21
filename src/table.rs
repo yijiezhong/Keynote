@@ -212,3 +212,55 @@ pub fn del_row(src: &str, dst: &str, ident: u64, row: u32) -> Result<(), String>
     println!("表格 {ident}：已删除第 {row} 行，行数 {n} → {}", n - 1);
     Ok(())
 }
+
+
+pub fn add_col(src: &str, dst: &str, ident: u64, at_col: Option<u32>) -> Result<(), String> {
+    let mut docs = write::load_docs(src)?;
+    let map = write::ident_map(&docs);
+    let (_, tb) = map.get(&ident).ok_or(format!("找不到表格 {ident}"))?;
+    let mut tm = <tst::TableModelArchive as Message>::decode(tb.as_slice()).map_err(|_| "不是表格")?;
+    let n_cols = tm.number_of_columns;
+    let at = at_col.unwrap_or(n_cols + 1);
+    if at == 0 || at > n_cols + 1 { return Err(format!("列位置越界：1..{}", n_cols + 1)); }
+    let ins_col = (at - 1) as usize;
+    let tile_id = tm.base_data_store.tiles.tiles.first().ok_or("表格没有数据块")?.tile.identifier;
+    let uid_id = tm.base_column_row_uids.as_ref().ok_or("表格缺少 UID 映射")?.identifier;
+
+    let uid_loc = write::find_object(&docs, uid_id, "uid").ok_or("未定位 UID 映射")?;
+    let mut u = <tst::ColumnRowUidMapArchive as Message>::decode(
+        docs[uid_loc.0].segs[uid_loc.1].objs[uid_loc.2].as_slice()).map_err(|e| e.to_string())?;
+    let (lo, up) = fresh_uid(&u.sorted_column_uids);
+    let ins = u.sorted_column_uids.iter().position(|x| (up, lo) < (x.upper, x.lower)).unwrap_or(u.sorted_column_uids.len());
+    u.sorted_column_uids.insert(ins, tsp::Uuid { lower: lo, upper: up });
+    let mut idxs: Vec<u32> = u.column_index_for_uid.iter().map(|v| if *v >= ins_col as u32 { v + 1 } else { *v }).collect();
+    idxs.insert(ins, ins_col as u32);
+    u.column_index_for_uid = idxs;
+    u.column_uid_for_index.insert(ins_col, ins as u32);
+    tm.number_of_columns = n_cols + 1;
+
+    let tile_loc = write::find_object(&docs, tile_id, "tile").ok_or("未定位 Tile")?;
+    let mut tile = <tst::Tile as Message>::decode(
+        docs[tile_loc.0].segs[tile_loc.1].objs[tile_loc.2].as_slice()).map_err(|e| e.to_string())?;
+    let mut nid: u32 = 100;
+    for ri in &mut tile.row_infos {
+        nid += 1;
+        let mut cell = vec![0x05, 0x03];
+        cell.extend_from_slice(&[0u8; 6]);
+        cell.extend_from_slice(&[0x08, 0x10, 0x02, 0x00]);
+        cell.extend_from_slice(&nid.to_le_bytes());
+        cell.extend_from_slice(&[0x05, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]);
+        let mut buf = ri.cell_storage_buffer.clone().unwrap_or_default();
+        buf.extend_from_slice(&cell);
+        ri.cell_storage_buffer = Some(buf);
+        ri.cell_count += 1;
+    }
+    tile.numrows = tile.row_infos.len() as u32;
+
+    let table_loc = write::find_object(&docs, ident, "").ok_or("未定位表格对象")?;
+    docs[table_loc.0].segs[table_loc.1].objs[table_loc.2] = tm.encode_to_vec();
+    docs[tile_loc.0].segs[tile_loc.1].objs[tile_loc.2] = tile.encode_to_vec();
+    docs[uid_loc.0].segs[uid_loc.1].objs[uid_loc.2] = u.encode_to_vec();
+    write::save_docs(src, dst, &docs)?;
+    println!("表格 {ident}：已加一列（第 {at} 列，空文本格），列数 {n_cols} → {}", n_cols + 1);
+    Ok(())
+}
