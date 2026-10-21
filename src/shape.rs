@@ -44,10 +44,10 @@ fn resolve(map: &HashMap<u64, (u64, Vec<u8>)>, sa: &kn::SlideArchive, path: &str
     let parts: Vec<usize> = path.split('/').filter_map(|s| s.parse().ok()).collect();
     if parts.is_empty() { return None; }
     let mut list: Vec<u64> = sa.owned_drawables.iter().map(|r| r.identifier).collect();
-    let mut cur = *list.get(parts[0].checked_sub(1)?)?;
+    let mut cur = *list.get(parts[0])?;
     for p in &parts[1..] {
         list = child_ids(map, cur)?;
-        cur = *list.get(p.checked_sub(1)?)?;
+        cur = *list.get(*p)?;
     }
     Some(cur)
 }

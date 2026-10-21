@@ -1,55 +1,35 @@
 # kn
 
+[简体中文](README.zh-CN.md) | English
+
 A Rust CLI for reading and editing Apple Keynote `.key` files.
+
+`kn` works directly on the IWA/zip container for most operations, and uses Keynote
+itself only where the document model requires it (creating a deck, adding slides,
+inserting images, and some table styling).
 
 ## Status
 
-**Rust implementation — all 56 kn commands are ported.** The CLI includes read, write, table, shape, media and slide operations:
+**Rust 3.0 — all 56 commands ported.**
+
+- No Python runtime and no `kn_schema` package are required.
+- The public repository contains the Rust source only.
+- Write operations use `<src> <dst>` and leave the source document untouched.
+- Keynote-dependent commands still require macOS Keynote and Automation permission.
+
+See the full guide in [English](docs/kn-guide.en.md) or
+[简体中文](docs/kn-guide.zh-CN.md).
+
+## Quick start
 
 ```bash
-kn list   <deck.key>     # list zip entries
-kn verify <deck.key>     # IWA / segments / objects / slides statistics
-kn info   <deck.key>     # alias of verify
-kn text   <deck.key> [keyword]
-kn texts  <deck.key> [keyword]
-kn types  <deck.key>
-kn outline <deck.key>
-kn set-text   <src.key> <dst.key> <page> <title|body> <text>
-kn tables <deck.key>
-kn add-row <src> <dst> <ident> <source-row> [--at N]
-kn del-row <src> <dst> <ident> <row>
-kn set-table-size <src> <dst> <ident> [--row-height H] [--col-width W]
-kn set-cell <src.key> <dst.key> <table-ident> <row> <col> <value>
-kn skip <src.key> <dst.key> <page|1-3,7> [--off]
-kn skip-many <src.key> <dst.key> <expr> [--off]
-kn set-note   <src.key> <dst.key> <page> <text>
-kn append-note <src.key> <dst.key> <page> <text>
-kn del-slide <src> <dst> <page>
-kn dup-slide <src> <dst> <page>
-kn set-link <src> <dst> <ident> <url>
-kn del-col <src> <dst> <ident> <列>
-kn add-col <src> <dst> <ident> [--at N]
-kn edit <src> <dst> <iwa名|-> <旧串> <新串> [--resize]
-kn batch <in-dir> <out-dir> <子命令> [参数...]
-kn set-image <src> <dst> <图片ident> <新图片>
-kn images <deck.key>
-kn links <deck.key>
-kn builds <deck.key> / builds-list
-kn set-transition <src> <dst> <page> <effect> [duration]
-kn set-build <src> <dst> <chunk-ident> [duration=2.5] [automatic=true]
-kn transitions <deck.key>
-kn audit <deck.key>
-kn check-notes <deck.key> [--require text]
-kn insert-image-paste <src> <dst> <page> <image>
-kn change-layout <src.key> <dst.key> <page> <layout>
-kn add-slide <src.key> <dst.key> <layout> [--title T] [--body B] [--after N] [--replace N]
-kn new    <new.key> [--theme T] [--layout L] [--title T] [--body B]
-kn help
+./bin/kn help
+./bin/kn outline deck.key
+./bin/kn set-text in.key out.key 1 title "New title"
+./bin/kn verify out.key
 ```
 
-Write and edit commands (`outline`, `set-text`, `set-table-fill`, `new`, `add-slide`, ...)
-are being ported from the previous Python implementation. The public repository no longer
-ships the Python version; it is kept privately only as a comparison oracle.
+`./bin/kn` builds the release binary on first use when it is missing.
 
 ## Build
 
@@ -58,31 +38,47 @@ cargo build --release
 ./bin/kn list your.key
 ```
 
-`./bin/kn` builds the release binary on first use. Build requirements:
+Requirements:
 
 - Rust 1.80+ (edition 2021)
-- `protoc` (used by `prost-build` to generate the Keynote protobuf modules)
-- A `.key` file; a macOS Keynote installation is only needed once write/edit commands land.
+- `protoc` for `prost-build` code generation
+- macOS Keynote for `new`, `add-slide`, `change-layout`, `insert-image`,
+  `insert-image-paste`, `del-slide`, `dup-slide`, and the Keynote-backed table
+  fill/merge paths
 
-## Roadmap
+## Command groups
 
-1. Read-only CLI: `list`, `verify`, `info`, `text`, `texts`, `types`, `outline`.
-2. File-level write: ident index, segment re-pack, atomic save; `set-text` / `set-note` / `append-note` / `set-cell` / `skip` / `skip-many` (current).
-3. `new`, `add-slide`, `change-layout` and `insert-image-paste` (Keynote via AppleScript) are ported and usable.
-3. Table / chart / image / shape / slide commands.
-4. `new` / `add-slide` / `insert-image-paste` (Keynote via AppleScript behind the Rust CLI).
-5. Swift menu bar shell (`swift/kn-menu/`) wired to the Rust CLI.
+| Group | Count | Commands |
+|---|---:|---|
+| Inspect | 17 | `list` `verify` `text` `texts` `types` `outline` `tables` `charts` `images` `links` `builds` `builds-list` `transitions` `styles` `colors` `audit` `check-notes` |
+| Text / notes | 6 | `set-text` `set-text-color` `set-text-style` `note` `set-note` `edit` |
+| Color / shape | 9 | `set-bg` `set-shape` `set-color` `set-style` `set-shape-geometry` `group` `ungroup` `del-shape` `dup-shape` |
+| Table | 9 | `set-cell` `add-row` `del-row` `add-col` `del-col` `set-table-border` `set-table-fill` `set-table-size` `merge-cells` |
+| Chart / image / link / animation | 8 | `set-chart` `set-image` `insert-image` `insert-image-paste` `set-link` `add-build` `set-build` `set-transition` |
+| Page structure | 5 | `add-slide` `change-layout` `del-slide` `dup-slide` `skip` |
+| Batch | 1 | `batch` |
+| Create | 1 | `new` |
+
+`info` is an alias of `verify`; `skip-many` is an alias-form of `skip`.
+`del-slide` accepts page expressions such as `3`, `1-3,7`, and `all`.
 
 ## Swift menu bar
 
-`swift/kn-menu/` contains a Swift/AppKit menu bar shell. It is built with `swiftc` and calls
-`bin/kn`; set `KN_BIN` if the binary lives elsewhere. macOS 26 has a known `NSStatusItem`
-position issue — see `swift/kn-menu/README.md`.
+`swift/kn-menu/` contains an AppKit menu bar shell that calls `bin/kn`. It exposes
+read-only inspections, page operations, title/note/skip writes, and full CLI help.
+See [swift/kn-menu/README.md](swift/kn-menu/README.md) for build and `KN_BIN` notes.
 
 ## Documentation
 
-The command reference in `docs/` describes the target CLI. It is kept as the migration
-specification; the Rust phase-1 binary implements only the read-only subset above.
+- [kn Guide — English](docs/kn-guide.en.md)
+- [kn 使用与操作指南 — 简体中文](docs/kn-guide.zh-CN.md)
+- [Format analysis report (sanitized)](docs/format-report.pdf)
+
+## Safety
+
+Most commands read the source `.key` and write a new file. Keep the original until
+the output has been opened and checked in Keynote. Structural table edits such as
+`del-col` are experimental; verify the result in Keynote before delivery.
 
 ## License
 

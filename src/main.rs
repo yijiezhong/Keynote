@@ -555,7 +555,7 @@ fn usage() {
     println!("  kn info   <deck.key>             verify 的别名");
     println!("  kn help                          显示本帮助");
     println!();
-    println!("写回/编辑命令与只读命令均可用；完整说明见 docs/kn-operation-guide.md。");
+    println!("写回/编辑命令与只读命令均可用；完整说明见 docs/kn-guide.zh-CN.md。");
 }
 
 
@@ -821,12 +821,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 eprintln!("用法: kn del-slide <src> <dst> <页码> / kn dup-slide <src> <dst> <页码>");
                 std::process::exit(2);
             }
-            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
             let n = if args[0] == "del-slide" {
-                apple::delete_slide(&args[1], &args[2], page)
+                let docs = write::load_docs(&args[1]).map_err(|e| e.to_string())?;
+                let map = write::ident_map(&docs);
+                let total = write::slides(&map).len();
+                let pages = slide::parse_pages(&args[3], total);
+                if pages.is_empty() {
+                    return Err(format!("页码表达式无有效页：{}（共 {total} 页）", args[3]).into());
+                }
+                let mut cur = args[1].clone();
+                let mut last = 0usize;
+                for (i, page) in pages.iter().rev().enumerate() {
+                    let next = if i + 1 == pages.len() { args[2].clone() } else { format!("{}.del{i}.key", args[2].trim_end_matches(".key")) };
+                    last = apple::delete_slide(&cur, &next, *page).map_err(|e| e.to_string())?;
+                    if cur != args[1] { let _ = std::fs::remove_file(&cur); }
+                    cur = next;
+                }
+                last
             } else {
-                apple::duplicate_slide(&args[1], &args[2], page)
-            }.map_err(|e| e.to_string())?;
+                let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+                apple::duplicate_slide(&args[1], &args[2], page).map_err(|e| e.to_string())?
+            };
             println!("已写出 {}（共 {n} 页）", args[2]);
             Ok(())
         }

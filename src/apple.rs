@@ -593,7 +593,7 @@ end run
 pub fn merge_cells(src: &str, dst: &str, ident: u64, r1: u32, c1: u32, r2: u32, c2: u32) -> Result<(), String> {
     let (page, idx) = table_page_index(src, ident)?;
     let dst_abs = std::path::absolute(dst).map_err(|e| e.to_string())?;
-    let range = format!("{}{}:{}{}", col_letter(c1), r1, col_letter(c2), r2);
+    let range = format!("{}{}:{}{}", col_letter(c1 + 1), r1 + 1, col_letter(c2 + 1), r2 + 1);
     open_keynote_doc(src)?;
     let out = run(MERGE_CELLS, &[dst_abs.to_string_lossy().to_string(), page.to_string(), idx.to_string(), range])?;
     if out != "ok" { return Err(format!("合并失败：{out}")); }
