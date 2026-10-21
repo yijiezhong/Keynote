@@ -162,6 +162,9 @@ pub fn find_object(docs: &[Doc], ident: u64, type_hint: &str) -> Option<(usize, 
                 if type_hint == "slidestyle" && <kn::SlideStyleArchive as Message>::decode(obj.as_slice()).is_ok() {
                     return Some((di, si, oi));
                 }
+                if type_hint == "shapestyle" && <tswp::ShapeStyleArchive as Message>::decode(obj.as_slice()).is_ok() {
+                    return Some((di, si, oi));
+                }
                 if type_hint == "" {
                     return Some((di, si, oi));
                 }

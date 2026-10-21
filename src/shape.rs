@@ -116,3 +116,58 @@ pub fn set_geometry(src: &str, dst: &str, page: usize, path: &str, x: Option<f32
     println!("第 {page} 页形状 {id}（path={path}）几何已更新");
     Ok(())
 }
+
+
+pub fn resolve_path(map: &HashMap<u64, (u64, Vec<u8>)>, sa: &kn::SlideArchive, path: &str) -> Option<u64> {
+    resolve(map, sa, path)
+}
+
+pub fn set_fill(src: &str, dst: &str, page: usize, path: &str, hex: &str) -> Result<(), String> {
+    let (r, g, b) = parse_rgb(hex)?;
+    let docs = write::load_docs(src)?;
+    let map = write::ident_map(&docs);
+    let slides = write::slides(&map);
+    if page == 0 || page > slides.len() { return Err(format!("页码越界：1..{}", slides.len())); }
+    let id = resolve_path(&map, &slides[page - 1], path).ok_or("找不到该形状路径")?;
+    let typ = map.get(&id).map(|(t, _)| *t).unwrap_or(0);
+    let name = schema::type_name(typ).unwrap_or("");
+    let style_id = match name {
+        "TSWP.ShapeInfoArchive" => {
+            let m = <tswp::ShapeInfoArchive as Message>::decode(map.get(&id).unwrap().1.as_slice()).map_err(|e| e.to_string())?;
+            m.super_.style.as_ref().map(|r| r.identifier)
+        }
+        "KN.PlaceholderArchive" => {
+            let m = <kn::PlaceholderArchive as Message>::decode(map.get(&id).unwrap().1.as_slice()).map_err(|e| e.to_string())?;
+            m.super_.super_.style.as_ref().map(|r| r.identifier)
+        }
+        _ => None,
+    }.ok_or_else(|| format!("{name} 没有可编辑的填充样式"))?;
+    let (di, si, oi) = write::find_object(&docs, style_id, "shapestyle").ok_or("找不到 ShapeStyleArchive")?;
+    let mut st = <tswp::ShapeStyleArchive as Message>::decode(docs[di].segs[si].objs[oi].as_slice()).map_err(|e| e.to_string())?;
+    let props = st.super_.shape_properties.as_mut().ok_or("形状样式没有 shape_properties")?;
+    let fill = props.fill.as_mut().ok_or("形状样式没有填充")?;
+    let c = fill.color.as_mut().ok_or("该形状不是纯色填充")?;
+    c.model = 1; c.r = Some(r); c.g = Some(g); c.b = Some(b); c.a = Some(1.0); c.rgbspace = Some(1);
+    write::save_rewrite(src, dst, &docs[di].name, si, oi, &st.encode_to_vec())?;
+    println!("第 {page} 页形状 {path}（{name}）填充 → {hex}");
+    Ok(())
+}
+
+pub fn delete_shape(src: &str, dst: &str, page: usize, path: &str) -> Result<(), String> {
+    if path.contains('/') { return Err("del-shape 暂只支持顶层路径".into()); }
+    let docs = write::load_docs(src)?;
+    let map = write::ident_map(&docs);
+    let slides = write::slides(&map);
+    if page == 0 || page > slides.len() { return Err(format!("页码越界：1..{}", slides.len())); }
+    let id = resolve_path(&map, &slides[page - 1], path).ok_or("找不到该形状路径")?;
+    let ids = write::slide_node_ids(&map);
+    let node = <kn::SlideNodeArchive as Message>::decode(map.get(&ids[page - 1]).ok_or("节点不存在")?.1.as_slice()).map_err(|e| e.to_string())?;
+    let slide_id = node.slide.as_ref().ok_or("该页没有 SlideArchive")?.identifier;
+    let (di, si, oi) = write::find_object(&docs, slide_id, "slidearchive").ok_or("找不到 SlideArchive")?;
+    let mut sa = <kn::SlideArchive as Message>::decode(docs[di].segs[si].objs[oi].as_slice()).map_err(|e| e.to_string())?;
+    sa.owned_drawables.retain(|r| r.identifier != id);
+    sa.drawables_z_order.retain(|r| r.identifier != id);
+    write::save_rewrite(src, dst, &docs[di].name, si, oi, &sa.encode_to_vec())?;
+    println!("第 {page} 页已移除 drawable {id}（path={path}）");
+    Ok(())
+}

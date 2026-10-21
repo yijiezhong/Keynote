@@ -264,3 +264,82 @@ pub fn add_col(src: &str, dst: &str, ident: u64, at_col: Option<u32>) -> Result<
     println!("表格 {ident}：已加一列（第 {at} 列，空文本格），列数 {n_cols} → {}", n_cols + 1);
     Ok(())
 }
+
+
+pub fn del_col(src: &str, dst: &str, ident: u64, col: u32) -> Result<(), String> {
+    let mut docs = write::load_docs(src)?;
+    let map = write::ident_map(&docs);
+    let (_, tb) = map.get(&ident).ok_or(format!("找不到表格 {ident}"))?;
+    let mut tm = <tst::TableModelArchive as Message>::decode(tb.as_slice()).map_err(|_| "不是表格")?;
+    let n = tm.number_of_columns;
+    if n <= 1 { return Err("表格只剩一列".into()); }
+    if col == 0 || col > n { return Err(format!("列号越界：1..{n}")); }
+    let pos = (col - 1) as usize;
+    let tile_id = tm.base_data_store.tiles.tiles.first().ok_or("表格没有数据块")?.tile.identifier;
+    let uid_id = tm.base_column_row_uids.as_ref().ok_or("表格缺少 UID 映射")?.identifier;
+
+    let uid_loc = write::find_object(&docs, uid_id, "uid").ok_or("未定位 UID 映射")?;
+    let mut u = <tst::ColumnRowUidMapArchive as Message>::decode(docs[uid_loc.0].segs[uid_loc.1].objs[uid_loc.2].as_slice()).map_err(|e| e.to_string())?;
+    u.column_index_for_uid.retain(|v| *v != pos as u32);
+    for v in &mut u.column_index_for_uid { if *v > pos as u32 { *v -= 1; } }
+    if pos < u.sorted_column_uids.len() { u.sorted_column_uids.remove(pos); }
+    let mut new_uid_idx = Vec::new();
+    for (i, v) in u.column_uid_for_index.iter().enumerate() {
+        if i == pos { continue; }
+        new_uid_idx.push(if *v > pos as u32 { v - 1 } else { *v });
+    }
+    u.column_uid_for_index = new_uid_idx;
+    tm.number_of_columns = n - 1;
+
+    let tile_loc = write::find_object(&docs, tile_id, "tile").ok_or("未定位 Tile")?;
+    let mut tile = <tst::Tile as Message>::decode(docs[tile_loc.0].segs[tile_loc.1].objs[tile_loc.2].as_slice()).map_err(|e| e.to_string())?;
+    for ri in &mut tile.row_infos {
+        let count = ri.cell_count as usize;
+        let offs = ri.cell_offsets.as_ref().unwrap_or(&ri.cell_offsets_pre_bnc);
+        if pos >= count || offs.len() < count * 2 { continue; }
+        let buf = ri.cell_storage_buffer.clone().unwrap_or_else(|| ri.cell_storage_buffer_pre_bnc.clone());
+        let mut cells = Vec::new();
+        for i in 0..count {
+            let s = u16::from_le_bytes([offs[i * 2], offs[i * 2 + 1]]) as usize;
+            let e = if i + 1 < count { u16::from_le_bytes([offs[(i + 1) * 2], offs[(i + 1) * 2 + 1]]) as usize } else { buf.len() };
+            cells.push(buf.get(s..e).unwrap_or(&[]).to_vec());
+        }
+        if pos >= cells.len() { continue; }
+        cells.remove(pos);
+        let mut new_buf = Vec::new();
+        let mut new_offs = Vec::new();
+        for c in &cells { new_offs.push(new_buf.len() as u16); new_buf.extend_from_slice(c); }
+        ri.cell_storage_buffer = Some(new_buf);
+        let mut off_bytes = vec![0xFFu8; offs.len()];
+        for (i, v) in new_offs.iter().enumerate() {
+            if i * 2 + 1 < off_bytes.len() { off_bytes[i * 2..i * 2 + 2].copy_from_slice(&v.to_le_bytes()); }
+        }
+        ri.cell_offsets = Some(off_bytes);
+        ri.cell_count = cells.len() as u32;
+    }
+    tile.numrows = tile.row_infos.len() as u32;
+
+    let hdr_id = tm.base_data_store.column_headers.identifier;
+    let mut hdr: Option<(usize, usize, usize, tst::HeaderStorageBucket)> = None;
+    if let Some((di, si, oi)) = write::find_object(&docs, hdr_id, "header") {
+        let mut hb = <tst::HeaderStorageBucket as Message>::decode(docs[di].segs[si].objs[oi].as_slice()).map_err(|e| e.to_string())?;
+        if pos < hb.headers.len() {
+            let total: f32 = hb.headers.iter().map(|h| h.size).sum();
+            hb.headers.remove(pos);
+            if !hb.headers.is_empty() {
+                let each = total / hb.headers.len() as f32;
+                for (i, h) in hb.headers.iter_mut().enumerate() { h.size = each; h.index = i as u32; }
+            }
+            hdr = Some((di, si, oi, hb));
+        }
+    }
+
+    let table_loc = write::find_object(&docs, ident, "").ok_or("未定位表格对象")?;
+    docs[table_loc.0].segs[table_loc.1].objs[table_loc.2] = tm.encode_to_vec();
+    docs[tile_loc.0].segs[tile_loc.1].objs[tile_loc.2] = tile.encode_to_vec();
+    docs[uid_loc.0].segs[uid_loc.1].objs[uid_loc.2] = u.encode_to_vec();
+    if let Some((di, si, oi, hb)) = hdr { docs[di].segs[si].objs[oi] = hb.encode_to_vec(); }
+    write::save_docs(src, dst, &docs)?;
+    println!("表格 {ident}：已删除第 {col} 列，列数 {n} → {}", n - 1);
+    Ok(())
+}

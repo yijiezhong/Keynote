@@ -27,6 +27,7 @@ kn append-note <src.key> <dst.key> <page> <text>
 kn del-slide <src> <dst> <page>
 kn dup-slide <src> <dst> <page>
 kn set-link <src> <dst> <ident> <url>
+kn del-col <src> <dst> <ident> <列>
 kn add-col <src> <dst> <ident> [--at N]
 kn edit <src> <dst> <iwa名|-> <旧串> <新串> [--resize]
 kn batch <in-dir> <out-dir> <子命令> [参数...]

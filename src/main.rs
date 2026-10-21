@@ -503,6 +503,7 @@ fn usage() {
     println!("  kn skip <src> <dst> <页码|1-3,7> [--off]");
     println!("  kn skip-many <src> <dst> <表达式> [--off]");
     println!("  kn tables <deck.key>            列出表格 ident/行列");
+    println!("  kn del-col <src> <dst> <ident> <列>");
     println!("  kn add-col <src> <dst> <ident> [--at N]");
     println!("  kn add-row <src> <dst> <ident> <源行> [--at N]");
     println!("  kn del-row <src> <dst> <ident> <行>");
@@ -514,6 +515,8 @@ fn usage() {
     println!("  kn edit <src> <dst> <iwa名|-> <旧串> <新串> [--resize]");
     println!("  kn set-text-color <src> <dst> <页> <title|body> <#RRGGBB>");
     println!("  kn set-text-style <src> <dst> <页> <title|body> [--size] [--bold] [--italic] [--color] [--substr]");
+    println!("  kn set-shape <src> <dst> <页> <路径> <#RRGGBB>");
+    println!("  kn del-shape <src> <dst> <页> <路径>");
     println!("  kn set-bg <src> <dst> <页码> <#RRGGBB>");
     println!("  kn set-shape-geometry <src> <dst> <页> <路径> [x= y= w= h=]");
     println!("  kn styles <deck.key> [关键字]");
@@ -716,6 +719,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let p = args.get(1).ok_or("缺少文件")?;
             outline(p)
         }
+        Some("del-col") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn del-col <src> <dst> <ident> <列>");
+                std::process::exit(2);
+            }
+            let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
+            let col: u32 = args[4].parse().map_err(|_| "列不是整数")?;
+            table::del_col(&args[1], &args[2], ident, col).map_err(|e| e.to_string())?;
+            println!("已写出 {}", args[2]);
+            Ok(())
+        }
         Some("add-col") => {
             if args.len() < 4 {
                 eprintln!("用法: kn add-col <src> <dst> <ident> [--at N]");
@@ -859,6 +873,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             textstyle::apply(&args[1], &args[2], page, &args[4], size, bold, italic, color, substr.as_deref()).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("set-shape") => {
+            if args.len() < 6 {
+                eprintln!("用法: kn set-shape <src> <dst> <页> <路径> <#RRGGBB>");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            shape::set_fill(&args[1], &args[2], page, &args[4], &args[5]).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("del-shape") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn del-shape <src> <dst> <页> <路径>");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            shape::delete_shape(&args[1], &args[2], page, &args[4]).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("set-bg") => {
