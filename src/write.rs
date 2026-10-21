@@ -212,6 +212,16 @@ pub fn set_note_text(src: &str, dst: &str, page: usize, text: &str, append: bool
     save_rewrite(src, dst, &docs[di].name, si, oi, &new_bytes)
 }
 
+
+pub fn note_text(map: &HashMap<u64, (u64, Vec<u8>)>, sa: &kn::SlideArchive) -> Option<String> {
+    let r = sa.note.as_ref()?;
+    let (_, nb) = map.get(&r.identifier)?;
+    let na = <kn::NoteArchive as Message>::decode(nb.as_slice()).ok()?;
+    let (_, sb) = map.get(&na.contained_storage.identifier)?;
+    let st = <tswp::StorageArchive as Message>::decode(sb.as_slice()).ok()?;
+    Some(st.text.join(""))
+}
+
 pub fn save_docs(src: &str, dst: &str, docs: &[Doc]) -> Result<(), String> {
     let f = File::open(src).map_err(|e| e.to_string())?;
     let mut zin = zip::ZipArchive::new(f).map_err(|e| e.to_string())?;

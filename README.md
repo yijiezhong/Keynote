@@ -26,6 +26,8 @@ kn set-note   <src.key> <dst.key> <page> <text>
 kn append-note <src.key> <dst.key> <page> <text>
 kn del-slide <src> <dst> <page>
 kn dup-slide <src> <dst> <page>
+kn audit <deck.key>
+kn check-notes <deck.key> [--require text]
 kn insert-image-paste <src> <dst> <page> <image>
 kn change-layout <src.key> <dst.key> <page> <layout>
 kn add-slide <src.key> <dst.key> <layout> [--title T] [--body B] [--after N] [--replace N]

@@ -1,6 +1,7 @@
 // D3 spike：不依赖 Python，从零读 .key 并输出与 spec-1 一致的验收数字。
 // prost-build 每个 proto package 生成一个文件，跨 package 用 super::xxx 引用
 mod apple;
+mod audit;
 mod iwa;
 mod slide;
 mod table;
@@ -499,6 +500,8 @@ fn usage() {
     println!("  kn set-cell <src> <dst> <ident> <行> <列> <新值>");
     println!("  kn del-slide <src> <dst> <页码>");
     println!("  kn dup-slide <src> <dst> <页码>");
+    println!("  kn audit <deck.key>");
+    println!("  kn check-notes <deck.key> [--require 文本]");
     println!("  kn insert-image-paste <src> <dst> <页码> <图片>");
     println!("  kn change-layout <src> <dst> <页码> <版式>");
     println!("  kn add-slide <src> <dst> <版式> [--title T] [--body B] [--after N] [--replace N]");
@@ -643,7 +646,7 @@ fn outline(path: &str) -> Result<(), Box<dyn std::error::Error>> {
                 println!("        …（共 {} 行）", lines.len());
             }
         }
-        match note_text(&map, sa) {
+        match write::note_text(&map, sa) {
             Some(n) if !n.trim().is_empty() => println!("  备注: 有（{} 字）\n", n.chars().count()),
             _ => println!("  备注: 无\n"),
         }
@@ -651,20 +654,6 @@ fn outline(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("统计：{} 页", slides.len());
     Ok(())
 }
-
-fn note_text(
-    map: &std::collections::HashMap<u64, (u64, Vec<u8>)>,
-    sa: &kn::SlideArchive,
-) -> Option<String> {
-    use prost::Message;
-    let r = sa.note.as_ref()?;
-    let (_, nb) = map.get(&r.identifier)?;
-    let na = <kn::NoteArchive as Message>::decode(nb.as_slice()).ok()?;
-    let (_, sb) = map.get(&na.contained_storage.identifier)?;
-    let st = <tswp::StorageArchive as Message>::decode(sb.as_slice()).ok()?;
-    Some(st.text.join(""))
-}
-
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -773,6 +762,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 apple::duplicate_slide(&args[1], &args[2], page)
             }.map_err(|e| e.to_string())?;
             println!("已写出 {}（共 {n} 页）", args[2]);
+            Ok(())
+        }
+        Some("audit") => {
+            let p = args.get(1).ok_or("缺少文件")?;
+            audit::audit(p).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("check-notes") => {
+            if args.len() < 2 { eprintln!("用法: kn check-notes <deck.key> [--require 文本]"); std::process::exit(2); }
+            let mut requires = vec!["内容依据".to_string(), "设计依据".to_string()];
+            if let Some(pos) = args.iter().position(|a| a == "--require") {
+                if pos + 1 < args.len() { requires = vec![args[pos + 1].clone()]; }
+            }
+            audit::check_notes(&args[1], &requires).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("insert-image-paste") => {
