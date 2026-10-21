@@ -8,6 +8,7 @@ mod inspect2;
 mod media;
 mod iwa;
 mod schema;
+mod shape;
 mod slide;
 mod style;
 mod table;
@@ -509,6 +510,8 @@ fn usage() {
     println!("  kn dup-slide <src> <dst> <页码>");
     println!("  kn set-image <src> <dst> <图片ident> <新图片>");
     println!("  kn edit <src> <dst> <iwa名|-> <旧串> <新串> [--resize]");
+    println!("  kn set-bg <src> <dst> <页码> <#RRGGBB>");
+    println!("  kn set-shape-geometry <src> <dst> <页> <路径> [x= y= w= h=]");
     println!("  kn styles <deck.key> [关键字]");
     println!("  kn set-style <src> <dst> <样式ident> <属性=值>");
     println!("  kn colors <deck.key>");
@@ -820,6 +823,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let hits = write::edit_text(&args[1], &args[2], &args[3], &args[4], &args[5], resize)
                 .map_err(|e| e.to_string())?;
             println!("已替换 {hits} 处，写出 {}", args[2]);
+            Ok(())
+        }
+        Some("set-bg") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn set-bg <src> <dst> <页码> <#RRGGBB>");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            shape::set_bg(&args[1], &args[2], page, &args[4]).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("set-shape-geometry") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn set-shape-geometry <src> <dst> <页> <路径> [x= y= w= h= angle=]");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            let (mut x, mut y, mut w, mut h, mut a) = (None, None, None, None, None);
+            for arg in &args[5..] {
+                let (k, v) = arg.split_once('=').ok_or("参数应为 x=...")?;
+                let val: f32 = v.parse().map_err(|_| "几何值不是数字")?;
+                match k { "x" => x = Some(val), "y" => y = Some(val), "w" => w = Some(val), "h" => h = Some(val), "angle" => a = Some(val), _ => return Err(format!("未知参数 {k}").into()) }
+            }
+            shape::set_geometry(&args[1], &args[2], page, &args[4], x, y, w, h, a).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("styles") => {
