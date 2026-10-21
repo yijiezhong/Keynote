@@ -388,4 +388,4 @@ done
 
 ## 许可证
 
-MIT。详见仓库根目录 [LICENSE](../LICENSE)。
+MIT。详见仓库根目录 [MIT 许可证](../LICENSE)。

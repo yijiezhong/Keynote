@@ -17,8 +17,7 @@ inserting images, and some table styling).
 - Write operations use `<src> <dst>` and leave the source document untouched.
 - Keynote-dependent commands still require macOS Keynote and Automation permission.
 
-See the full guide in [English](docs/kn-guide.en.md) or
-[简体中文](docs/kn-guide.zh-CN.md).
+See the full guide: [English PDF](docs/kn-guide.en.pdf) · [简体中文 PDF](docs/kn-guide.zh-CN.pdf).
 
 ## Quick start
 
@@ -66,18 +65,14 @@ Requirements:
 
 `swift/kn-menu/` contains an AppKit menu bar shell that calls `bin/kn`. It exposes
 read-only inspections, page operations, title/note/skip writes, and full CLI help.
-See [swift/kn-menu/README.md](swift/kn-menu/README.md) for build and `KN_BIN` notes.
+See the [Swift menu bar README](swift/kn-menu/README.md) for build and `KN_BIN` notes.
 
 ## Documentation
 
-- [kn 使用与操作指南 — 简体中文 PDF](docs/kn-guide.zh-CN.pdf)
-- [kn Guide — English PDF](docs/kn-guide.en.pdf)
-- [kn Guide — English Markdown](docs/kn-guide.en.md)
-- [kn 使用与操作指南 — 简体中文 Markdown](docs/kn-guide.zh-CN.md)
-- [Format analysis report — 中文](docs/AppleKeynoteFormatReport.pdf)
-- [Format analysis report — English](docs/AppleKeynoteFormatReport.en.pdf)
-- [Format analysis source — 中文](docs/AppleKeynoteFormatReport.md)
-- [Format analysis source — English](docs/AppleKeynoteFormatReport.en.md)
+| Document | 简体中文 | English |
+|---|---|---|
+| kn Guide | [PDF](docs/kn-guide.zh-CN.pdf) · [Markdown](docs/kn-guide.zh-CN.md) | [PDF](docs/kn-guide.en.pdf) · [Markdown](docs/kn-guide.en.md) |
+| Format analysis report | [PDF](docs/AppleKeynoteFormatReport.pdf) · [Markdown](docs/AppleKeynoteFormatReport.md) | [PDF](docs/AppleKeynoteFormatReport.en.pdf) · [Markdown](docs/AppleKeynoteFormatReport.en.md) |
 
 ## Safety
 
@@ -87,4 +82,4 @@ the output has been opened and checked in Keynote. Structural table edits such a
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [MIT License](LICENSE).

@@ -403,4 +403,4 @@ Example file names are generic.
 
 ## License
 
-MIT. See [LICENSE](../LICENSE).
+MIT. See [MIT License](../LICENSE).

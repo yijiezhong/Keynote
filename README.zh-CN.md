@@ -16,8 +16,7 @@ Keynote 本体（新建文稿、新增页、插入图片，以及部分表格样
 - 写操作统一使用 `<src> <dst>`，源文件保持不变；
 - 需要 Keynote 的命令仍需安装 macOS Keynote，并授予自动化权限。
 
-完整说明见 [简体中文指南](docs/kn-guide.zh-CN.md) 或
-[English guide](docs/kn-guide.en.md)。
+完整说明见：[简体中文 PDF](docs/kn-guide.zh-CN.pdf) · [English PDF](docs/kn-guide.en.pdf)。
 
 ## 快速上手
 
@@ -64,18 +63,14 @@ cargo build --release
 
 `swift/kn-menu/` 是一个 AppKit 菜单栏壳，调用 `bin/kn`。菜单提供只读检查、页面操作、
 标题/备注/跳过写入，以及完整命令帮助。构建方式与 `KN_BIN` 说明见
-[swift/kn-menu/README.md](swift/kn-menu/README.md)。
+[Swift 菜单栏 README](swift/kn-menu/README.md)。
 
 ## 文档
 
-- [kn 使用与操作指南 — 简体中文 PDF](docs/kn-guide.zh-CN.pdf)
-- [kn Guide — English PDF](docs/kn-guide.en.pdf)
-- [kn 使用与操作指南 — 简体中文 Markdown](docs/kn-guide.zh-CN.md)
-- [kn Guide — English Markdown](docs/kn-guide.en.md)
-- [格式分析报告 — 中文](docs/AppleKeynoteFormatReport.pdf)
-- [Format analysis report — English](docs/AppleKeynoteFormatReport.en.pdf)
-- [格式分析报告源文件 — 中文](docs/AppleKeynoteFormatReport.md)
-- [English source](docs/AppleKeynoteFormatReport.en.md)
+| 文档 | 简体中文 | English |
+|---|---|---|
+| kn 使用与操作指南 | [PDF](docs/kn-guide.zh-CN.pdf) · [Markdown](docs/kn-guide.zh-CN.md) | [PDF](docs/kn-guide.en.pdf) · [Markdown](docs/kn-guide.en.md) |
+| 格式分析报告 | [PDF](docs/AppleKeynoteFormatReport.pdf) · [Markdown](docs/AppleKeynoteFormatReport.md) | [PDF](docs/AppleKeynoteFormatReport.en.pdf) · [Markdown](docs/AppleKeynoteFormatReport.en.md) |
 
 ## 安全边界
 
@@ -84,4 +79,4 @@ cargo build --release
 
 ## 许可证
 
-MIT，见 [LICENSE](LICENSE)。
+MIT，见 [MIT 许可证](LICENSE)。
