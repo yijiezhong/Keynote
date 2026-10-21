@@ -28,11 +28,11 @@ const READ_ONLY = new Set(['list', 'verify', 'info', 'text', 'texts', 'types', '
 
 
 const DESCRIPTION = [
-  '在 Apple Keynote `.key` 文件上执行 kn（Rust）命令；当前是阶段 1.5。',
-  '参数 `args` 是完整命令行数组，例如 `["outline","deck.key"]`、`["verify","deck.key"]`。',
-  '只读：list、verify/info、text、texts、types、outline、tables、links、builds、transitions、images、audit、check-notes。',
-  '已实现写回：batch（批量执行）、set-text（标题/正文）、set-note、append-note、set-cell、set-table-size、add-row/del-row、add-col、set-link、set-image、set-transition、set-build、edit、set-color、set-style、set-bg、set-shape-geometry、set-chart、set-text-color、set-text-style、skip/skip-many；均为 `<src> <dst>`，源文件只读。',
-  'new（从零创建）、add-slide、change-layout、insert-image-paste（插图片）、del-slide、dup-slide 也已可用；表格/图表/形状/页面其余命令仍在迁移。取帮助用 `["help"]`。',
+  '在 Apple Keynote `.key` 文件上执行 kn（Rust，56 条命令）命令。',
+  '参数 `args` 是完整命令行数组，例如 `["outline","deck.key"]`、`["set-text","in.key","out.key","1","title","标题"]`。',
+  '只读：list、verify/info、text、texts、types、outline、links、builds、transitions、images、colors、styles、charts、tables、audit、check-notes。',
+  '写回：set-text、set-note、append-note、set-text-color/style、set-link、set-image、set-cell、表格行列/边框/底色/合并、set-bg、set-shape、set-shape-geometry、del/dup-shape、group/ungroup、set-color、set-style、set-chart、set-transition、set-build、add-build、skip、del/dup-slide、add-slide、change-layout、insert-image(-paste)、new、batch、edit。',
+  '取帮助用 `["help"]`。'
 ].join(' ')
 
 export function apply(ctx, config = {}) {

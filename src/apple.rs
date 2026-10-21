@@ -4,6 +4,8 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::{schema, tst, write};
+
 fn temp_script() -> PathBuf {
     let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos();
     std::env::temp_dir().join(format!("kn_as_{}_{}.applescript", std::process::id(), nanos))
@@ -352,4 +354,248 @@ pub fn delete_slide(src: &str, dst: &str, page: usize) -> Result<usize, String> 
 
 pub fn duplicate_slide(src: &str, dst: &str, page: usize) -> Result<usize, String> {
     slide_op(src, dst, page, DUPLICATE_SLIDE, "复制页")
+}
+
+
+const TABLE_FILL: &str = r#"
+on colorOf(s)
+	if s is "" then return missing value
+	set AppleScript's text item delimiters to ","
+	set parts to text items of s
+	set AppleScript's text item delimiters to ""
+	return {item 1 of parts as integer, item 2 of parts as integer, item 3 of parts as integer}
+end colorOf
+
+on run argv
+	set dstPath to item 1 of argv
+	set pageNum to (item 2 of argv) as integer
+	set tableIdx to (item 3 of argv) as integer
+	set hrArg to (item 4 of argv) as integer
+	set bodyColor to item 5 of argv
+	set headerColor to item 6 of argv
+	set footerColor to item 7 of argv
+	set hcColor to item 8 of argv
+	set bandColor to item 9 of argv
+	tell application "Keynote"
+		set d to document 1
+		set t to table tableIdx of slide pageNum of d
+		set nRows to count of rows of t
+		set nCols to count of columns of t
+		set nHr to header row count of t
+		if hrArg > 0 then set nHr to hrArg
+		set nFr to footer row count of t
+		set nHc to header column count of t
+		set bodyCol to my colorOf(bodyColor)
+		set headerCol to my colorOf(headerColor)
+		set footerCol to my colorOf(footerColor)
+		set hcCol to my colorOf(hcColor)
+		set bandCol to my colorOf(bandColor)
+		if bodyCol is not missing value then
+			repeat with r from (nHr + 1) to (nRows - nFr)
+				repeat with c from (nHc + 1) to nCols
+					set background color of cell c of row r of t to bodyCol
+				end repeat
+			end repeat
+		end if
+		if headerCol is not missing value then
+			repeat with r from 1 to nHr
+				repeat with c from 1 to nCols
+					set background color of cell c of row r of t to headerCol
+				end repeat
+			end repeat
+		end if
+		if footerCol is not missing value then
+			repeat with r from (nRows - nFr + 1) to nRows
+				repeat with c from 1 to nCols
+					set background color of cell c of row r of t to footerCol
+				end repeat
+			end repeat
+		end if
+		if hcCol is not missing value then
+			repeat with r from (nHr + 1) to (nRows - nFr)
+				repeat with c from 1 to nHc
+					set background color of cell c of row r of t to hcCol
+				end repeat
+			end repeat
+		end if
+		if bandCol is not missing value then
+			repeat with r from (nHr + 1) to (nRows - nFr)
+				if ((r - hr) mod 2) is 0 then
+					repeat with c from (nHc + 1) to nCols
+						set background color of cell c of row r of t to bandCol
+					end repeat
+				end if
+			end repeat
+		end if
+		save d in POSIX file dstPath
+		close d saving no
+		return "ok"
+	end tell
+end run
+"#;
+
+fn table_page_index(src: &str, ident: u64) -> Result<(usize, usize), String> {
+    let docs = write::load_docs(src)?;
+    let map = write::ident_map(&docs);
+    let slides = write::slides(&map);
+    for (page, sa) in slides.iter().enumerate() {
+        let mut idx = 0usize;
+        for r in &sa.owned_drawables {
+            let Some((t, b)) = map.get(&r.identifier) else { continue };
+            if schema::type_name(*t) == Some("TST.TableInfoArchive") {
+                if let Ok(ti) = <tst::TableInfoArchive as prost::Message>::decode(b.as_slice()) {
+                    idx += 1;
+                    if ti.table_model.identifier == ident {
+                        return Ok((page + 1, idx));
+                    }
+                }
+            }
+        }
+    }
+    Err(format!("在页面上找不到表格 {ident}"))
+}
+
+fn hex_color(s: &str) -> Result<String, String> {
+    let s = s.trim().trim_start_matches('#');
+    if s.is_empty() { return Ok(String::new()); }
+    if s.len() != 6 { return Err("颜色格式应为 #RRGGBB".into()); }
+    let r = u8::from_str_radix(&s[0..2], 16).map_err(|_| "颜色格式错误")?;
+    let g = u8::from_str_radix(&s[2..4], 16).map_err(|_| "颜色格式错误")?;
+    let b = u8::from_str_radix(&s[4..6], 16).map_err(|_| "颜色格式错误")?;
+    Ok(format!("{},{},{}", r as u32 * 65535 / 255, g as u32 * 65535 / 255, b as u32 * 65535 / 255))
+}
+
+pub fn set_table_fill(
+    src: &str,
+    dst: &str,
+    ident: u64,
+    body: Option<&str>,
+    header: Option<&str>,
+    footer: Option<&str>,
+    header_col: Option<&str>,
+    band: Option<&str>,
+    header_rows: i64,
+) -> Result<(), String> {
+    let (page, idx) = table_page_index(src, ident)?;
+    let dst_abs = std::path::absolute(dst).map_err(|e| e.to_string())?;
+    open_keynote_doc(src)?;
+    let h = hex_color(body.unwrap_or(""))?;
+    let hd = hex_color(header.unwrap_or(""))?;
+    let ft = hex_color(footer.unwrap_or(""))?;
+    let hc = hex_color(header_col.unwrap_or(""))?;
+    let bd = hex_color(band.unwrap_or(""))?;
+    let args = vec![
+        dst_abs.to_string_lossy().to_string(),
+        page.to_string(),
+        idx.to_string(),
+        header_rows.to_string(),
+        h, hd, ft, hc, bd,
+    ];
+    let out = run(TABLE_FILL, &args)?;
+    if out != "ok" { return Err(format!("设置表格底色失败：{out}")); }
+    Ok(())
+}
+
+
+const INSERT_IMAGE_NEW: &str = r#"
+on run argv
+	set dstPath to item 1 of argv
+	set pageNum to (item 2 of argv) as integer
+	set imgPath to item 3 of argv
+	set xPos to item 4 of argv
+	set yPos to item 5 of argv
+	set wVal to item 6 of argv
+	tell application "Keynote"
+		activate
+		delay 1
+		set d to document 1
+		set s to slide pageNum of d
+		tell s
+			set im to make new image with properties {file:POSIX file imgPath}
+		end tell
+		if xPos is not "" and yPos is not "" then set position of im to {(xPos as real), (yPos as real)}
+		if wVal is not "" then set width of im to (wVal as real)
+		set n to count of images of s
+		save d in POSIX file dstPath
+		close d saving no
+		return "ok:" & n
+	end tell
+end run
+"#;
+
+pub fn insert_image(
+    src: &str,
+    dst: &str,
+    page: usize,
+    image: &str,
+    x: Option<f64>,
+    y: Option<f64>,
+    width: Option<f64>,
+) -> Result<usize, String> {
+    let dst_abs = std::path::absolute(dst).map_err(|e| e.to_string())?;
+    let img_abs = std::path::absolute(image).map_err(|e| e.to_string())?;
+    open_keynote_doc(src)?;
+    let args = vec![
+        dst_abs.to_string_lossy().to_string(),
+        page.to_string(),
+        img_abs.to_string_lossy().to_string(),
+        x.map(|v| v.to_string()).unwrap_or_default(),
+        y.map(|v| v.to_string()).unwrap_or_default(),
+        width.map(|v| v.to_string()).unwrap_or_default(),
+    ];
+    let out = run(INSERT_IMAGE_NEW, &args)?;
+    if let Some(rest) = out.strip_prefix("ok:") {
+        return rest.parse::<usize>().map_err(|e| e.to_string());
+    }
+    Err(format!("插入图片失败：{out}"))
+}
+
+
+fn col_letter(mut n: u32) -> String {
+    let mut s = String::new();
+    while n > 0 {
+        let r = ((n - 1) % 26) as u8;
+        s.insert(0, (b'A' + r) as char);
+        n = (n - 1) / 26;
+    }
+    s
+}
+
+const MERGE_CELLS: &str = r#"
+on run argv
+	set dstPath to item 1 of argv
+	set pageNum to (item 2 of argv) as integer
+	set tableIdx to (item 3 of argv) as integer
+	set rangeText to item 4 of argv
+	tell application "Keynote"
+		activate
+		delay 1
+		set d to document 1
+		set t to table tableIdx of slide pageNum of d
+		set selection range of t to range rangeText of t
+		delay 1
+	end tell
+	tell application "System Events"
+		tell process "Keynote"
+			click menu item "合并单元格" of menu 1 of menu item "表格" of menu 1 of menu bar item "格式" of menu bar 1
+		end tell
+	end tell
+	delay 1
+	tell application "Keynote"
+		set d to document 1
+		save d in POSIX file dstPath
+		close d saving no
+	end tell
+	return "ok"
+end run
+"#;
+
+pub fn merge_cells(src: &str, dst: &str, ident: u64, r1: u32, c1: u32, r2: u32, c2: u32) -> Result<(), String> {
+    let (page, idx) = table_page_index(src, ident)?;
+    let dst_abs = std::path::absolute(dst).map_err(|e| e.to_string())?;
+    let range = format!("{}{}:{}{}", col_letter(c1), r1, col_letter(c2), r2);
+    open_keynote_doc(src)?;
+    let out = run(MERGE_CELLS, &[dst_abs.to_string_lossy().to_string(), page.to_string(), idx.to_string(), range])?;
+    if out != "ok" { return Err(format!("合并失败：{out}")); }
+    Ok(())
 }

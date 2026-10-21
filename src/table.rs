@@ -1,7 +1,8 @@
 //! Table commands: list tables and set a numeric cell.
 use prost::Message;
 
-use crate::{tsp, tst, write};
+use crate::{schema, tsd, tsp, tss, tst, write};
+use crate::iwa::{Node, NodeValue};
 
 fn tables_from(docs: &[write::Doc]) -> Vec<(u64, tst::TableModelArchive)> {
     let mut out = Vec::new();
@@ -341,5 +342,77 @@ pub fn del_col(src: &str, dst: &str, ident: u64, col: u32) -> Result<(), String>
     if let Some((di, si, oi, hb)) = hdr { docs[di].segs[si].objs[oi] = hb.encode_to_vec(); }
     write::save_docs(src, dst, &docs)?;
     println!("表格 {ident}：已删除第 {col} 列，列数 {n} → {}", n - 1);
+    Ok(())
+}
+
+
+fn max_ident(docs: &[write::Doc]) -> u64 {
+    let mut top = 0;
+    for d in docs { for s in &d.segs { if let Some(id) = crate::iwa::ident_of(s) { top = top.max(id); } } }
+    top
+}
+
+fn stroke(r: f32, g: f32, b: f32, width: f32) -> tsd::StrokeArchive {
+    tsd::StrokeArchive {
+        color: Some(tsp::Color { model: 1, r: Some(r), g: Some(g), b: Some(b), a: Some(1.0), rgbspace: Some(1), ..Default::default() }),
+        width: Some(width),
+        ..Default::default()
+    }
+}
+
+pub fn set_border(src: &str, dst: &str, ident: u64, color: Option<&str>, width: Option<f32>, header: bool, body: bool, footer: bool) -> Result<(), String> {
+    let (r, g, b) = match color {
+        Some(c) => {
+            let s = c.trim().trim_start_matches('#');
+            if s.len() != 6 { return Err("颜色格式应为 #RRGGBB".into()); }
+            (u8::from_str_radix(&s[0..2], 16).unwrap() as f32 / 255.0,
+             u8::from_str_radix(&s[2..4], 16).unwrap() as f32 / 255.0,
+             u8::from_str_radix(&s[4..6], 16).unwrap() as f32 / 255.0)
+        }
+        None => (0.932, 0.135, 0.047),
+    };
+    let w = width.unwrap_or(4.0);
+    let mut docs = write::load_docs(src)?;
+    let map = write::ident_map(&docs);
+    let (_, tb) = map.get(&ident).ok_or(format!("找不到表格 {ident}"))?;
+    let mut tm = <tst::TableModelArchive as Message>::decode(tb.as_slice()).map_err(|_| "不是表格")?;
+    let base_id = tm.table_style.identifier;
+    let (_, base_b) = map.get(&base_id).ok_or("该表格没有 table_style")?;
+    let base = <tst::TableStyleArchive as Message>::decode(base_b.as_slice()).map_err(|_| "table_style 不是 TableStyleArchive")?;
+    let new_id = max_ident(&docs) + 1;
+    let mut sup = tss::StyleArchive::default();
+    sup.parent = Some(tsp::Reference { identifier: base_id, ..Default::default() });
+    sup.is_variation = Some(true);
+    sup.stylesheet = base.super_.stylesheet.clone();
+    let mut props = tst::TableStylePropertiesArchive::default();
+    props.table_border_visible = Some(true);
+    let st = stroke(r, g, b, w);
+    if header {
+        props.header_row_border_stroke = Some(st.clone());
+        props.header_column_border_stroke = Some(st.clone());
+    }
+    if body {
+        props.table_body_horizontal_border_stroke = Some(st.clone());
+        props.table_body_vertical_border_stroke = Some(st.clone());
+    }
+    if footer { props.footer_row_border_stroke = Some(st); }
+    let archive = tst::TableStyleArchive { super_: sup, override_count: Some(6), table_properties: Some(props) };
+    let blob = archive.encode_to_vec();
+    tm.table_style.identifier = new_id;
+    let (di, si, oi) = write::find_object(&docs, ident, "").ok_or("未定位表格对象")?;
+    docs[di].segs[si].objs[oi] = tm.encode_to_vec();
+    let type_id = schema::type_id("TST.TableStyleArchive").ok_or("registry 缺少 TableStyleArchive")?;
+    let mi = vec![
+        Node { field: 1, value: NodeValue::Varint(type_id) },
+        Node { field: 2, value: NodeValue::Bytes(vec![1, 0, 5]) },
+        Node { field: 3, value: NodeValue::Varint(blob.len() as u64) },
+    ];
+    let ainfo = vec![
+        Node { field: 1, value: NodeValue::Varint(new_id) },
+        Node { field: 2, value: NodeValue::Bytes(crate::iwa::pb_serialize_nodes(&mi)) },
+    ];
+    docs[di].segs.push(crate::iwa::Segment { ainfo, objs: vec![blob], meta: vec![(type_id, 0)] });
+    write::save_docs(src, dst, &docs)?;
+    println!("表格 {ident}：边框已更新（新样式 ident={new_id}）");
     Ok(())
 }

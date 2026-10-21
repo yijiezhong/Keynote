@@ -3,6 +3,7 @@
 mod apple;
 mod audit;
 mod batch;
+mod build;
 mod chart;
 mod color;
 mod inspect2;
@@ -511,14 +512,22 @@ fn usage() {
     println!("  kn set-cell <src> <dst> <ident> <行> <列> <新值>");
     println!("  kn del-slide <src> <dst> <页码>");
     println!("  kn dup-slide <src> <dst> <页码>");
+    println!("  kn insert-image <src> <dst> <页> <图片> [x] [y] [width]");
     println!("  kn set-image <src> <dst> <图片ident> <新图片>");
     println!("  kn edit <src> <dst> <iwa名|-> <旧串> <新串> [--resize]");
     println!("  kn set-text-color <src> <dst> <页> <title|body> <#RRGGBB>");
     println!("  kn set-text-style <src> <dst> <页> <title|body> [--size] [--bold] [--italic] [--color] [--substr]");
-    println!("  kn set-shape <src> <dst> <页> <路径> <#RRGGBB>");
+    println!("  kn set-table-border <src> <dst> <ident> [color=#RRGGBB width=4]");
+    println!("  kn merge-cells <src> <dst> <ident> <r1> <c1> <r2> <c2>");
+    println!("  kn set-table-fill <src> <dst> <ident> [--body C] [--header C] [--band C]");    println!("  kn set-shape <src> <dst> <页> <路径> <#RRGGBB>");
+    println!("  kn dup-shape <src> <dst> <页> <路径> [--offset dx,dy]");
+    println!("  kn group <src> <dst> <页> <路径1,路径2>");
+    println!("  kn ungroup <src> <dst> <页> <组路径>");
     println!("  kn del-shape <src> <dst> <页> <路径>");
     println!("  kn set-bg <src> <dst> <页码> <#RRGGBB>");
-    println!("  kn set-shape-geometry <src> <dst> <页> <路径> [x= y= w= h=]");
+    println!("  kn set-table-border <src> <dst> <ident> [color=#RRGGBB width=4]");
+    println!("  kn merge-cells <src> <dst> <ident> <r1> <c1> <r2> <c2>");
+    println!("  kn set-table-fill <src> <dst> <ident> [--body C] [--header C] [--band C]");    println!("  kn set-shape-geometry <src> <dst> <页> <路径> [x= y= w= h=]");
     println!("  kn styles <deck.key> [关键字]");
     println!("  kn set-style <src> <dst> <样式ident> <属性=值>");
     println!("  kn charts <deck.key>");
@@ -531,6 +540,7 @@ fn usage() {
     println!("  kn builds <deck.key> / builds-list");
     println!("  kn set-link <src> <dst> <ident> <url>");
     println!("  kn set-transition <src> <dst> <页> <effect> [duration]");
+    println!("  kn add-build <src> <dst> <页> <路径> [effect]");
     println!("  kn set-build <src> <dst> <块ident> [duration=2.5] [automatic=true]");
     println!("  kn transitions <deck.key>");
     println!("  kn audit <deck.key>");
@@ -819,6 +829,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("已写出 {}（共 {n} 页）", args[2]);
             Ok(())
         }
+        Some("insert-image") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn insert-image <src> <dst> <页> <图片> [x] [y] [width]");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            let x = args.get(5).and_then(|s| s.parse().ok());
+            let y = args.get(6).and_then(|s| s.parse().ok());
+            let w = args.get(7).and_then(|s| s.parse().ok());
+            let n = apple::insert_image(&args[1], &args[2], page, &args[4], x, y, w).map_err(|e| e.to_string())?;
+            println!("已写出 {}（本页图片 {n} 张）", args[2]);
+            Ok(())
+        }
         Some("set-image") => {
             if args.len() < 5 {
                 eprintln!("用法: kn set-image <src> <dst> <图片ident> <新图片>");
@@ -875,6 +898,60 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             textstyle::apply(&args[1], &args[2], page, &args[4], size, bold, italic, color, substr.as_deref()).map_err(|e| e.to_string())?;
             Ok(())
         }
+        Some("set-table-border") => {
+            if args.len() < 4 {
+                eprintln!("用法: kn set-table-border <src> <dst> <ident> [color=#RRGGBB width=4]");
+                std::process::exit(2);
+            }
+            let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
+            let mut color = None; let mut width = None;
+            for a in &args[4..] {
+                if let Some(v) = a.strip_prefix("color=") { color = Some(v); }
+                if let Some(v) = a.strip_prefix("width=") { width = v.parse().ok(); }
+            }
+            table::set_border(&args[1], &args[2], ident, color, width, true, true, true).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("merge-cells") => {
+            if args.len() < 8 {
+                eprintln!("用法: kn merge-cells <src> <dst> <ident> <r1> <c1> <r2> <c2>");
+                std::process::exit(2);
+            }
+            let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
+            let r1: u32 = args[4].parse().map_err(|_| "r1 不是整数")?;
+            let c1: u32 = args[5].parse().map_err(|_| "c1 不是整数")?;
+            let r2: u32 = args[6].parse().map_err(|_| "r2 不是整数")?;
+            let c2: u32 = args[7].parse().map_err(|_| "c2 不是整数")?;
+            apple::merge_cells(&args[1], &args[2], ident, r1, c1, r2, c2).map_err(|e| e.to_string())?;
+            println!("已写出 {}", args[2]);
+            Ok(())
+        }
+        Some("set-table-fill") => {
+            if args.len() < 4 {
+                eprintln!("用法: kn set-table-fill <src> <dst> <ident> [--body C] [--header C] [--footer C] [--header-col C] [--band C] [--header-rows N]");
+                std::process::exit(2);
+            }
+            let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
+            let mut body; let mut header; let mut footer; let mut hc; let mut band;
+            body = None; header = None; footer = None; hc = None; band = None;
+            let mut hr = 0i64;
+            let mut i = 4usize;
+            while i < args.len() {
+                let key = args[i].as_str();
+                if i + 1 >= args.len() { return Err("参数缺值".into()); }
+                let v = args[i + 1].clone();
+                match key {
+                    "--body" => body = Some(v), "--header" => header = Some(v), "--footer" => footer = Some(v),
+                    "--header-col" => hc = Some(v), "--band" => band = Some(v),
+                    "--header-rows" => hr = v.parse().map_err(|_| "行数不是整数")?,
+                    _ => return Err(format!("未知参数 {key}").into()),
+                }
+                i += 2;
+            }
+            apple::set_table_fill(&args[1], &args[2], ident, body.as_deref(), header.as_deref(), footer.as_deref(), hc.as_deref(), band.as_deref(), hr).map_err(|e| e.to_string())?;
+            println!("已写出 {}", args[2]);
+            Ok(())
+        }
         Some("set-shape") => {
             if args.len() < 6 {
                 eprintln!("用法: kn set-shape <src> <dst> <页> <路径> <#RRGGBB>");
@@ -882,6 +959,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
             shape::set_fill(&args[1], &args[2], page, &args[4], &args[5]).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("dup-shape") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn dup-shape <src> <dst> <页> <路径> [--offset dx,dy]");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            let mut dx = 50.0f32; let mut dy = 50.0f32;
+            if let Some(pos) = args.iter().position(|a| a == "--offset") {
+                if let Some(v) = args.get(pos + 1) {
+                    if let Some((a, b)) = v.split_once(',') { dx = a.parse().unwrap_or(50.0); dy = b.parse().unwrap_or(50.0); }
+                }
+            }
+            shape::duplicate_shape(&args[1], &args[2], page, &args[4], dx, dy).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("group") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn group <src> <dst> <页> <路径1,路径2,...>");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            shape::group(&args[1], &args[2], page, &args[4]).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("ungroup") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn ungroup <src> <dst> <页> <组路径>");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            shape::ungroup(&args[1], &args[2], page, &args[4]).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("del-shape") => {
@@ -998,6 +1108,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
             let dur = args.get(5).and_then(|s| s.parse::<f64>().ok());
             inspect2::set_transition(&args[1], &args[2], page, &args[4], dur).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("add-build") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn add-build <src> <dst> <页> <路径> [effect]");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            let effect = args.get(5).map(|s| s.as_str()).unwrap_or("apple:bc-appear");
+            build::add_build(&args[1], &args[2], page, &args[4], effect).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("set-build") => {

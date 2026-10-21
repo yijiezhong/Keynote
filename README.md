@@ -4,7 +4,7 @@ A Rust CLI for reading and editing Apple Keynote `.key` files.
 
 ## Status
 
-**Phase 1.5 — read + basic text write.** The Rust implementation currently provides:
+**Rust implementation — all 56 kn commands are ported.** The CLI includes read, write, table, shape, media and slide operations:
 
 ```bash
 kn list   <deck.key>     # list zip entries
