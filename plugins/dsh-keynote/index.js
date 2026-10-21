@@ -24,15 +24,15 @@ export const name = 'dsh-keynote'
 export const inject = ['tools']
 
 /** 只读命令：可以并行跑，不产生新文件。 */
-const READ_ONLY = new Set(['list', 'verify', 'info'])
+const READ_ONLY = new Set(['list', 'verify', 'info', 'text', 'texts', 'types', 'outline'])
 
 
 const DESCRIPTION = [
-  '在 Apple Keynote `.key` 文件上执行 kn（Rust）命令；当前是阶段 1，只读。',
-  '参数 `args` 是完整命令行数组，例如 `["list","deck.key"]`、`["verify","deck.key"]`。',
-  '已实现：list（zip 条目）、verify / info（IWA / 段 / 对象 / slides 统计）。',
-  '写回与编辑命令（outline、set-text、new、add-slide 等）正在从 Python 迁移到 Rust，暂不可用。',
-  '取帮助用 `["help"]`。',
+  '在 Apple Keynote `.key` 文件上执行 kn（Rust）命令；当前是阶段 1.5。',
+  '参数 `args` 是完整命令行数组，例如 `["outline","deck.key"]`、`["verify","deck.key"]`。',
+  '只读：list、verify/info、text、texts、types、outline。',
+  '已实现写回：set-text（标题/正文）、set-note、append-note，均为 `<src> <dst>`，源文件只读。',
+  '表格/图表/形状/页面/new/add-slide 等命令仍在迁移。取帮助用 `["help"]`。',
 ].join(' ')
 
 export function apply(ctx, config = {}) {

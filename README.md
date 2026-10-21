@@ -4,12 +4,19 @@ A Rust CLI for reading and editing Apple Keynote `.key` files.
 
 ## Status
 
-**Phase 1 — read-only.** The Rust implementation currently provides:
+**Phase 1.5 — read + basic text write.** The Rust implementation currently provides:
 
 ```bash
 kn list   <deck.key>     # list zip entries
 kn verify <deck.key>     # IWA / segments / objects / slides statistics
 kn info   <deck.key>     # alias of verify
+kn text   <deck.key> [keyword]
+kn texts  <deck.key> [keyword]
+kn types  <deck.key>
+kn outline <deck.key>
+kn set-text   <src.key> <dst.key> <page> <title|body> <text>
+kn set-note   <src.key> <dst.key> <page> <text>
+kn append-note <src.key> <dst.key> <page> <text>
 kn help
 ```
 
@@ -32,8 +39,8 @@ cargo build --release
 
 ## Roadmap
 
-1. Read-only CLI (current): `list`, `verify`, `info`.
-2. File-level write: ident index, segment re-pack, atomic save; port `set-text` / `set-note`.
+1. Read-only CLI: `list`, `verify`, `info`, `text`, `texts`, `types`, `outline`.
+2. File-level write: ident index, segment re-pack, atomic save; `set-text` / `set-note` / `append-note` (current).
 3. Table / chart / image / shape / slide commands.
 4. `new` / `add-slide` / `insert-image-paste` (Keynote via AppleScript behind the Rust CLI).
 5. Swift menu bar shell (`swift/kn-menu/`) wired to the Rust CLI.

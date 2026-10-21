@@ -2,7 +2,7 @@
 
 把本仓库的 Rust `kn` CLI 暴露成 DeepSeek Harness 的 `keynote_kn` 工具。
 
-> **阶段 1（只读）**：当前只实现 `list` / `verify` / `info`；写回与编辑命令正在从 Python 迁移到 Rust。
+> **阶段 1.5**：只读 `list` / `verify` / `info` / `text` / `texts` / `types` / `outline`；已实现 `set-text` / `set-note` / `append-note`；其余命令仍在迁移。
 
 ## 准备
 
@@ -24,6 +24,8 @@ cargo build --release
 ```json
 { "args": ["list", "deck.key"] }
 { "args": ["verify", "deck.key"] }
+{ "args": ["outline", "deck.key"] }
+{ "args": ["set-text", "in.key", "out.key", "1", "title", "New title"] }
 { "args": ["help"] }
 ```
 
