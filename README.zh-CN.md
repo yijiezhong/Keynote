@@ -4,6 +4,8 @@
 
 读取与编辑 Apple Keynote `.key` 文件的 Rust 命令行工具。
 
+仓库：<https://github.com/yijiezhong/Keynote>
+
 `kn` 的大部分操作直接处理 IWA / zip 容器；只有在 Keynote 文档模型强制要求时才调用
 Keynote 本体（新建文稿、新增页、插入图片，以及部分表格样式操作）。
 

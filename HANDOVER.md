@@ -7,7 +7,7 @@
 - 分支：`main`
 - 代码基线：`51bf02b`
 - 当前状态：56 条命令已实现；全量回归完成；工作区干净
-- GitHub：尚未配置 remote，尚未 push
+- GitHub：`https://github.com/yijiezhong/Keynote`（public）
 
 ## 快速验收
 
@@ -119,11 +119,11 @@ cargo build --release
 
 ## GitHub 交接
 
-当前没有 remote，尚未 push。
+已配置 remote 并完成首次 push：
 
-```bash
-git remote add origin <GitHub 仓库 URL>
-git push -u origin main
+```text
+origin  https://github.com/yijiezhong/Keynote.git
+branch  main -> origin/main
 ```
 
 提交身份已配置为：
@@ -141,10 +141,9 @@ git push origin main --tags
 
 ## 后续建议
 
-1. 配置 GitHub remote 并完成首次 push。
-2. 在 GitHub 上确认默认分支为 `main`。
-3. 如需长期回归，补充一个可公开的纯色形状 fixture 到测试集。
-4. 交付前按指南执行：
+1. 在 GitHub 上确认默认分支为 `main`。
+2. 如需长期回归，补充一个可公开的纯色形状 fixture 到测试集。
+3. 交付前按指南执行：
 
 ```bash
 ./bin/kn verify 输出.key

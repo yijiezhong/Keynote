@@ -4,6 +4,8 @@
 
 A Rust CLI for reading and editing Apple Keynote `.key` files.
 
+Repository: <https://github.com/yijiezhong/Keynote>
+
 `kn` works directly on the IWA/zip container for most operations, and uses Keynote
 itself only where the document model requires it (creating a deck, adding slides,
 inserting images, and some table styling).
