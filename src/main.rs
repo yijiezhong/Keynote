@@ -550,7 +550,7 @@ fn usage() {
     println!("  kn add-slide <src> <dst> <版式> [--title T] [--body B] [--after N] [--replace N]");
     println!("  kn new <输出.key> [--theme T] [--layout L] [--title T] [--body B] [--force]");
     println!("  kn set-note <src> <dst> <页> <文本>");
-    println!("  kn append-note <src> <dst> <页> <文本>");
+    println!("  kn append-note <src> <dst> <页> <文本>（note 是别名）");
     println!("  kn info   <deck.key>             verify 的别名");
     println!("  kn help                          显示本帮助");
     println!();
@@ -1234,13 +1234,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("  版式：{l}（1 页）");
             Ok(())
         }
-        Some("set-note") | Some("append-note") => {
+        Some("set-note") | Some("append-note") | Some("note") => {
             if args.len() < 5 {
                 eprintln!("用法: kn set-note <src.key> <dst.key> <页码> <文本>");
                 std::process::exit(2);
             }
             let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
-            let append = args[0] == "append-note";
+            let append = matches!(args[0].as_str(), "append-note" | "note");
             write::set_note_text(&args[1], &args[2], page, &args[4], append)
                 .map_err(|e| e.to_string())?;
             println!("已写出 {}", args[2]);
