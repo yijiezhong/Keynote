@@ -2,7 +2,7 @@
 
 把本仓库的 Rust `kn` CLI 暴露成 DeepSeek Harness 的 `keynote_kn` 工具。
 
-> **阶段 1.6**：只读 `list` / `verify` / `info` / `text` / `texts` / `types` / `outline` / `tables`；已实现 `set-text` / `set-note` / `append-note` / `set-cell` / `skip` / `skip-many` / `new` / `add-slide` / `change-layout`；其余命令仍在迁移。
+> **阶段 1.6**：只读 `list` / `verify` / `info` / `text` / `texts` / `types` / `outline` / `tables`；已实现 `set-text` / `set-note` / `append-note` / `set-cell` / `skip` / `skip-many` / `new` / `add-slide` / `change-layout` / `insert-image-paste`；其余命令仍在迁移。
 
 ## 准备
 

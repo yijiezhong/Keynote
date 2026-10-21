@@ -229,3 +229,68 @@ pub fn add_slide(
     }
     Err(format!("未预期返回：{out}"))
 }
+
+
+const INSERT_IMAGE: &str = r#"
+on run argv
+	set imgPath to item 1 of argv
+	set pageNum to (item 2 of argv) as integer
+	tell application "Keynote"
+		activate
+		delay 1
+		set d to document 1
+		set s to slide pageNum of d
+		if pageNum > 1 then
+			show s
+			delay 1
+		end if
+		set n0 to count of images of s
+	end tell
+	repeat with attempt from 1 to 3
+		set the clipboard to ""
+		delay 0.3
+		set the clipboard to (read (POSIX file imgPath) as JPEG picture)
+		delay 1
+		tell application "Keynote"
+			activate
+			delay 1
+		end tell
+		tell application "System Events"
+			keystroke "v" using command down
+		end tell
+		delay 3
+		tell application "Keynote"
+			set d to document 1
+			set s to slide pageNum of d
+			set n1 to count of images of s
+			if n1 > n0 then
+				save d
+				close d saving no
+				return "ok:" & n1
+			end if
+		end tell
+	end repeat
+	tell application "Keynote"
+		close document 1 saving no
+	end tell
+	error "粘贴 3 次仍未插入图片（剪贴板或辅助功能权限异常）"
+end run
+"#;
+
+pub fn insert_image_paste(src: &str, dst: &str, page: usize, image: &str) -> Result<usize, String> {
+    let src_abs = std::path::absolute(src).map_err(|e| e.to_string())?;
+    let dst_abs = std::path::absolute(dst).map_err(|e| e.to_string())?;
+    let img_abs = std::path::absolute(image).map_err(|e| e.to_string())?;
+    fs::copy(&src_abs, &dst_abs).map_err(|e| e.to_string())?;
+    let _ = run(r#"tell application "Keynote" to close every document saving no"#, &[]);
+    let _ = Command::new("open")
+        .args(["-b", "com.apple.Keynote", &dst_abs.to_string_lossy()])
+        .status();
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    let args = vec![img_abs.to_string_lossy().to_string(), page.to_string()];
+    let out = run(INSERT_IMAGE, &args)?;
+    if let Some(rest) = out.strip_prefix("ok:") {
+        return rest.parse::<usize>().map_err(|e| e.to_string());
+    }
+    Err(format!("粘贴失败：{out}"))
+}
