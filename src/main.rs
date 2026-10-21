@@ -1,4 +1,4 @@
-// D3 spike：不依赖 Python，从零读 .key 并输出与 spec-1 一致的验收数字。
+// D3 spike：从零读取 .key，并输出与 spec-1 一致的验收数字。
 // prost-build 每个 proto package 生成一个文件，跨 package 用 super::xxx 引用
 mod apple;
 mod audit;
@@ -317,7 +317,7 @@ fn verify(path: &str) -> Result<(), Box<dyn std::error::Error>> {
         for seg in &segs {
             for (idx, obj) in seg.objs.iter().enumerate() {
                 if idx != 0 {
-                    continue; // 段内非首对象没有 ident，跳过（与 Python 的 _locate 一致）
+                    continue; // 段内非首对象没有 ident，跳过
                 }
                 idents.insert(
                     seg.ident,

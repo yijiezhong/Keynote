@@ -1,5 +1,4 @@
 //! IWA / Snappy / protobuf byte-level primitives.
-//! Ported from the private Python reference; no Python runtime is used.
 
 
 pub fn uvarint(buf: &[u8], mut i: usize) -> Result<(u64, usize), String> {
