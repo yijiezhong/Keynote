@@ -41,9 +41,45 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
+  universal:
+    name: Build universal
+    needs: build
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kn-arm64
+          path: artifacts/arm64
+      - name: Download x86_64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kn-x86_64
+          path: artifacts/x86_64
+      - name: Combine and package
+        run: |
+          set -euo pipefail
+          mkdir -p dist/arm64 dist/x86_64 dist/universal
+          tar -xzf artifacts/arm64/kn-*-arm64.tar.gz -C dist/arm64
+          tar -xzf artifacts/x86_64/kn-*-x86_64.tar.gz -C dist/x86_64
+          lipo -create dist/arm64/kn dist/x86_64/kn -output dist/universal/kn
+          file dist/universal/kn
+          lipo -archs dist/universal/kn
+          tar -czf "dist/kn-${GITHUB_REF_NAME}-universal.tar.gz" -C dist/universal kn
+          shasum -a 256 "dist/kn-${GITHUB_REF_NAME}-universal.tar.gz" \
+            > "dist/kn-${GITHUB_REF_NAME}-universal.tar.gz.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kn-universal
+          path: dist/kn-*-universal.tar.gz*
+          if-no-files-found: error
+
   release:
     name: Publish release
-    needs: build
+    needs:
+      - build
+      - universal
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
