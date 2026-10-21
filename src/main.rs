@@ -2,6 +2,7 @@
 // prost-build 每个 proto package 生成一个文件，跨 package 用 super::xxx 引用
 mod apple;
 mod audit;
+mod inspect2;
 mod iwa;
 mod slide;
 mod table;
@@ -500,6 +501,9 @@ fn usage() {
     println!("  kn set-cell <src> <dst> <ident> <行> <列> <新值>");
     println!("  kn del-slide <src> <dst> <页码>");
     println!("  kn dup-slide <src> <dst> <页码>");
+    println!("  kn links <deck.key>");
+    println!("  kn builds <deck.key> / builds-list");
+    println!("  kn transitions <deck.key>");
     println!("  kn audit <deck.key>");
     println!("  kn check-notes <deck.key> [--require 文本]");
     println!("  kn insert-image-paste <src> <dst> <页码> <图片>");
@@ -762,6 +766,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 apple::duplicate_slide(&args[1], &args[2], page)
             }.map_err(|e| e.to_string())?;
             println!("已写出 {}（共 {n} 页）", args[2]);
+            Ok(())
+        }
+        Some("links") => {
+            let p = args.get(1).ok_or("缺少文件")?;
+            inspect2::links(p).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("transitions") => {
+            let p = args.get(1).ok_or("缺少文件")?;
+            inspect2::transitions(p).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("builds") | Some("builds-list") => {
+            let p = args.get(1).ok_or("缺少文件")?;
+            inspect2::builds(p, args[0] == "builds-list").map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("audit") => {
