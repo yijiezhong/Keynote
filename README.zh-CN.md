@@ -68,8 +68,10 @@ cargo build --release
 
 ## 文档
 
-- [kn 使用与操作指南 — 简体中文](docs/kn-guide.zh-CN.md)
-- [kn Guide — English](docs/kn-guide.en.md)
+- [kn 使用与操作指南 — 简体中文 PDF](docs/kn-guide.zh-CN.pdf)
+- [kn Guide — English PDF](docs/kn-guide.en.pdf)
+- [kn 使用与操作指南 — 简体中文 Markdown](docs/kn-guide.zh-CN.md)
+- [kn Guide — English Markdown](docs/kn-guide.en.md)
 - [格式分析报告 — 中文](docs/AppleKeynoteFormatReport.pdf)
 - [Format analysis report — English](docs/AppleKeynoteFormatReport.en.pdf)
 - [格式分析报告源文件 — 中文](docs/AppleKeynoteFormatReport.md)

@@ -342,6 +342,8 @@ done
 ./bin/kn merge-cells out.key out2.key 7031011 0 0 1 1
 ```
 
+> 先用 `tables` 查表格 ident；写入后跑 `verify`，再在 Keynote 中打开输出确认，并保留中间副本。
+
 ---
 
 ## 十一、验证与排错

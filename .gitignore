@@ -12,6 +12,8 @@ venv/
 *.pdf
 !docs/AppleKeynoteFormatReport.pdf
 !docs/AppleKeynoteFormatReport.en.pdf
+!docs/kn-guide.zh-CN.pdf
+!docs/kn-guide.en.pdf
 
 target/
 swift/kn-menu/kn-menu

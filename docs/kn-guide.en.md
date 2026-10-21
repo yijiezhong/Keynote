@@ -352,6 +352,8 @@ done
 ./bin/kn merge-cells out.key out2.key 7031011 0 0 1 1
 ```
 
+> Find the table ident with `tables`; after writing, run `verify` and open the output in Keynote. Keep the intermediate copy.
+
 ---
 
 ## 11. Verification and troubleshooting
