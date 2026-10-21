@@ -17,6 +17,8 @@ kn outline <deck.key>
 kn set-text   <src.key> <dst.key> <page> <title|body> <text>
 kn tables <deck.key>
 kn set-cell <src.key> <dst.key> <table-ident> <row> <col> <value>
+kn skip <src.key> <dst.key> <page|1-3,7> [--off]
+kn skip-many <src.key> <dst.key> <expr> [--off]
 kn set-note   <src.key> <dst.key> <page> <text>
 kn append-note <src.key> <dst.key> <page> <text>
 kn new    <new.key> [--theme T] [--layout L] [--title T] [--body B]
@@ -43,7 +45,7 @@ cargo build --release
 ## Roadmap
 
 1. Read-only CLI: `list`, `verify`, `info`, `text`, `texts`, `types`, `outline`.
-2. File-level write: ident index, segment re-pack, atomic save; `set-text` / `set-note` / `append-note` / `set-cell` (current).
+2. File-level write: ident index, segment re-pack, atomic save; `set-text` / `set-note` / `append-note` / `set-cell` / `skip` / `skip-many` (current).
 3. `new` (Keynote via AppleScript) is ported and usable.
 3. Table / chart / image / shape / slide commands.
 4. `new` / `add-slide` / `insert-image-paste` (Keynote via AppleScript behind the Rust CLI).

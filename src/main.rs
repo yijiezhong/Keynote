@@ -2,6 +2,7 @@
 // prost-build 每个 proto package 生成一个文件，跨 package 用 super::xxx 引用
 mod apple;
 mod iwa;
+mod slide;
 mod table;
 mod write;
 
@@ -489,6 +490,8 @@ fn usage() {
     println!("  kn types  <deck.key>             对象类型计数");
     println!("  kn outline <deck.key>           按页导出标题/正文");
     println!("  kn set-text <src> <dst> <页> <title|body> <文本>");
+    println!("  kn skip <src> <dst> <页码|1-3,7> [--off]");
+    println!("  kn skip-many <src> <dst> <表达式> [--off]");
     println!("  kn tables <deck.key>            列出表格 ident/行列");
     println!("  kn set-cell <src> <dst> <ident> <行> <列> <新值>");
     println!("  kn new <输出.key> [--theme T] [--layout L] [--title T] [--body B] [--force]");
@@ -685,6 +688,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some("outline") => {
             let p = args.get(1).ok_or("缺少文件")?;
             outline(p)
+        }
+        Some("skip") | Some("skip-many") => {
+            if args.len() < 4 {
+                eprintln!("用法: kn skip <src> <dst> <页码|表达式> [--off]");
+                std::process::exit(2);
+            }
+            let skip = !args.iter().any(|a| a == "--off");
+            let msg = slide::set_skip(&args[1], &args[2], &args[3], skip).map_err(|e| e.to_string())?;
+            println!("{msg}");
+            Ok(())
         }
         Some("tables") => {
             let p = args.get(1).ok_or("缺少文件")?;

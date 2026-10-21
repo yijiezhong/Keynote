@@ -80,6 +80,18 @@ fn walk_nodes(
     }
 }
 
+pub fn slide_node_ids(map: &HashMap<u64, (u64, Vec<u8>)>) -> Vec<u64> {
+    let Some(show) = find_show(map) else { return Vec::new() };
+    let mut ids: Vec<u64> = show.slide_tree.slides.iter().map(|r| r.identifier).collect();
+    if ids.is_empty() {
+        if let Some(root) = &show.slide_tree.root_slide_node {
+            let mut seen = HashSet::new();
+            walk_nodes(root.identifier, map, &mut ids, &mut seen);
+        }
+    }
+    ids
+}
+
 pub fn slides(map: &HashMap<u64, (u64, Vec<u8>)>) -> Vec<kn::SlideArchive> {
     let Some(show) = find_show(map) else { return Vec::new() };
     let mut ids: Vec<u64> = show.slide_tree.slides.iter().map(|r| r.identifier).collect();
@@ -124,6 +136,9 @@ pub fn find_object(docs: &[Doc], ident: u64, type_hint: &str) -> Option<(usize, 
                     return Some((di, si, oi));
                 }
                 if type_hint == "tile" && <tst::Tile as Message>::decode(obj.as_slice()).is_ok() {
+                    return Some((di, si, oi));
+                }
+                if type_hint == "slide" && <kn::SlideNodeArchive as Message>::decode(obj.as_slice()).is_ok() {
                     return Some((di, si, oi));
                 }
                 if type_hint == "" {
@@ -189,6 +204,36 @@ pub fn set_note_text(src: &str, dst: &str, page: usize, text: &str, append: bool
     }
     let new_bytes = st.encode_to_vec();
     save_rewrite(src, dst, &docs[di].name, si, oi, &new_bytes)
+}
+
+pub fn save_docs(src: &str, dst: &str, docs: &[Doc]) -> Result<(), String> {
+    let f = File::open(src).map_err(|e| e.to_string())?;
+    let mut zin = zip::ZipArchive::new(f).map_err(|e| e.to_string())?;
+    let tmp = format!("{dst}.tmp");
+    let out = File::create(&tmp).map_err(|e| e.to_string())?;
+    let mut zw = zip::ZipWriter::new(out);
+    for i in 0..zin.len() {
+        let name = {
+            let info = zin.by_index(i).map_err(|e| e.to_string())?;
+            info.name().map_err(|e| e.to_string())?.to_string()
+        };
+        let mut data = Vec::new();
+        zin.by_name(&name).map_err(|e| e.to_string())?.read_to_end(&mut data).map_err(|e| e.to_string())?;
+        if let Some(d) = docs.iter().find(|d| d.name == name) {
+            data = iwa::iwa_wrap(&iwa::serialize_segments(&d.segs));
+        }
+        let opts = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        if name.ends_with('/') {
+            zw.add_directory(&name, opts).map_err(|e| e.to_string())?;
+        } else {
+            zw.start_file(&name, opts).map_err(|e| e.to_string())?;
+            zw.write_all(&data).map_err(|e| e.to_string())?;
+        }
+    }
+    zw.finish().map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, dst).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 pub fn save_rewrite(
