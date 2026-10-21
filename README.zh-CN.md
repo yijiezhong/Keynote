@@ -70,8 +70,10 @@ cargo build --release
 
 - [kn 使用与操作指南 — 简体中文](docs/kn-guide.zh-CN.md)
 - [kn Guide — English](docs/kn-guide.en.md)
-- [格式分析报告](docs/AppleKeynoteFormatReport.pdf)
-- [格式分析报告源文件（Markdown）](docs/AppleKeynoteFormatReport.md)
+- [格式分析报告 — 中文](docs/AppleKeynoteFormatReport.pdf)
+- [Format analysis report — English](docs/AppleKeynoteFormatReport.en.pdf)
+- [格式分析报告源文件 — 中文](docs/AppleKeynoteFormatReport.md)
+- [English source](docs/AppleKeynoteFormatReport.en.md)
 
 ## 安全边界
 

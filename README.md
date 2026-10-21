@@ -72,8 +72,10 @@ See [swift/kn-menu/README.md](swift/kn-menu/README.md) for build and `KN_BIN` no
 
 - [kn Guide — English](docs/kn-guide.en.md)
 - [kn 使用与操作指南 — 简体中文](docs/kn-guide.zh-CN.md)
-- [Format analysis report](docs/AppleKeynoteFormatReport.pdf)
-- [Format analysis source (Markdown)](docs/AppleKeynoteFormatReport.md)
+- [Format analysis report — 中文](docs/AppleKeynoteFormatReport.pdf)
+- [Format analysis report — English](docs/AppleKeynoteFormatReport.en.pdf)
+- [Format analysis source — 中文](docs/AppleKeynoteFormatReport.md)
+- [Format analysis source — English](docs/AppleKeynoteFormatReport.en.md)
 
 ## Safety
 

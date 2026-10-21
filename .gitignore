@@ -11,6 +11,7 @@ venv/
 # Generated PDFs / local scratch
 *.pdf
 !docs/AppleKeynoteFormatReport.pdf
+!docs/AppleKeynoteFormatReport.en.pdf
 
 target/
 swift/kn-menu/kn-menu
