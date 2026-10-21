@@ -31,6 +31,18 @@ Keynote 本体（新建文稿、新增页、插入图片，以及部分表格样
 
 `./bin/kn` 在缺少二进制时会在首次运行自动构建。
 
+## Homebrew
+
+公开 tap 安装预编译的 macOS 二进制：
+
+```bash
+brew tap yijiezhong/keynote_cli https://github.com/yijiezhong/keynote_cli.git
+brew install yijiezhong/keynote_cli/kn
+```
+
+tap 仓库名是 `keynote_cli`，不符合 Homebrew 默认的 `homebrew-*` 命名，因此
+`brew tap` 必须带显式 URL。
+
 ## 构建
 
 ```bash

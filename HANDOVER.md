@@ -5,7 +5,7 @@
 - 项目：Apple Keynote `.key` 命令行工具
 - 语言：Rust 2021
 - 分支：`main`
-- 代码基线：`51bf02b`
+- 代码基线：`d2c8d44`（v3.0.0 release）
 - 当前状态：56 条命令已实现；全量回归完成；工作区干净
 - GitHub：`https://github.com/yijiezhong/Keynote`（public）
 
@@ -117,6 +117,25 @@ cargo build --release
 | 中文格式报告 PDF | `docs/AppleKeynoteFormatReport.pdf` |
 | 英文格式报告 PDF | `docs/AppleKeynoteFormatReport.en.pdf` |
 
+## Homebrew 发布
+
+- Tap：`https://github.com/yijiezhong/keynote_cli`
+- Formula：`Formula/kn.rb`
+- Release：`https://github.com/yijiezhong/Keynote/releases/tag/v3.0.0`
+- 工作流：`.github/workflows/release.yml`
+- 预编译资产：
+  - `kn-v3.0.0-arm64.tar.gz`
+  - `kn-v3.0.0-x86_64.tar.gz`
+
+安装：
+
+```bash
+brew tap yijiezhong/keynote_cli https://github.com/yijiezhong/keynote_cli.git
+brew install yijiezhong/keynote_cli/kn
+```
+
+注意：tap 仓库名是 `keynote_cli`，不是 `homebrew-keynote_cli`，所以 `brew tap` 要带显式 URL。
+
 ## GitHub 交接
 
 已配置 remote 并完成首次 push：
@@ -143,7 +162,8 @@ git push origin main --tags
 
 1. 在 GitHub 上确认默认分支为 `main`。
 2. 如需长期回归，补充一个可公开的纯色形状 fixture 到测试集。
-3. 交付前按指南执行：
+3. 发布新版本时更新 `Cargo.toml`、打新 tag，并同步更新 tap formula 的 URL/SHA。
+4. 交付前按指南执行：
 
 ```bash
 ./bin/kn verify 输出.key

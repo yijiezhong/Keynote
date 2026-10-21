@@ -32,6 +32,18 @@ See the full guide: [English PDF](docs/kn-guide.en.pdf) · [简体中文 PDF](do
 
 `./bin/kn` builds the release binary on first use when it is missing.
 
+## Homebrew
+
+The public tap installs a prebuilt macOS binary:
+
+```bash
+brew tap yijiezhong/keynote_cli https://github.com/yijiezhong/keynote_cli.git
+brew install yijiezhong/keynote_cli/kn
+```
+
+The tap repository is `keynote_cli` rather than `homebrew-*`, so the explicit
+tap URL is required.
+
 ## Build
 
 ```bash
