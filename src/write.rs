@@ -6,7 +6,7 @@ use std::io::{Read, Write};
 use prost::Message;
 
 use crate::iwa::{self, Segment};
-use crate::{kn, tsp, tswp};
+use crate::{kn, tsp, tst, tswp};
 
 pub struct Doc {
     pub name: String,
@@ -121,6 +121,9 @@ pub fn find_object(docs: &[Doc], ident: u64, type_hint: &str) -> Option<(usize, 
             }
             for (oi, obj) in seg.objs.iter().enumerate() {
                 if type_hint == "storage" && <tswp::StorageArchive as Message>::decode(obj.as_slice()).is_ok() {
+                    return Some((di, si, oi));
+                }
+                if type_hint == "tile" && <tst::Tile as Message>::decode(obj.as_slice()).is_ok() {
                     return Some((di, si, oi));
                 }
                 if type_hint == "" {
