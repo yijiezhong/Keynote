@@ -6,7 +6,7 @@ use std::io::{Read, Write};
 use prost::Message;
 
 use crate::iwa::{self, Segment};
-use crate::{kn, tsp, tst, tswp};
+use crate::{kn, tsd, tsp, tst, tswp};
 
 pub struct Doc {
     pub name: String,
@@ -150,6 +150,9 @@ pub fn find_object(docs: &[Doc], ident: u64, type_hint: &str) -> Option<(usize, 
                 if type_hint == "link" && <tswp::HyperlinkFieldArchive as Message>::decode(obj.as_slice()).is_ok() {
                     return Some((di, si, oi));
                 }
+                if type_hint == "image" && <tsd::ImageArchive as Message>::decode(obj.as_slice()).is_ok() {
+                    return Some((di, si, oi));
+                }
                 if type_hint == "" {
                     return Some((di, si, oi));
                 }
@@ -223,6 +226,54 @@ pub fn note_text(map: &HashMap<u64, (u64, Vec<u8>)>, sa: &kn::SlideArchive) -> O
     let (_, sb) = map.get(&na.contained_storage.identifier)?;
     let st = <tswp::StorageArchive as Message>::decode(sb.as_slice()).ok()?;
     Some(st.text.join(""))
+}
+
+pub fn save_rewrite_data(
+    src: &str,
+    dst: &str,
+    target_name: &str,
+    seg_i: usize,
+    obj_i: usize,
+    new_obj: &[u8],
+    data_name: &str,
+    data_bytes: &[u8],
+) -> Result<(), String> {
+    let f = File::open(src).map_err(|e| e.to_string())?;
+    let mut zin = zip::ZipArchive::new(f).map_err(|e| e.to_string())?;
+    let tmp = format!("{dst}.tmp");
+    let out = File::create(&tmp).map_err(|e| e.to_string())?;
+    let mut zw = zip::ZipWriter::new(out);
+    let mut found_data = false;
+    for i in 0..zin.len() {
+        let name = {
+            let info = zin.by_index(i).map_err(|e| e.to_string())?;
+            info.name().map_err(|e| e.to_string())?.to_string()
+        };
+        let mut data = Vec::new();
+        zin.by_name(&name).map_err(|e| e.to_string())?.read_to_end(&mut data).map_err(|e| e.to_string())?;
+        if name == target_name {
+            let payload = iwa::iwa_unwrap(&data).map_err(|e| e.to_string())?;
+            let mut segs = iwa::parse_segments(&payload).map_err(|e| e.to_string())?;
+            segs[seg_i].objs[obj_i] = new_obj.to_vec();
+            data = iwa::iwa_wrap(&iwa::serialize_segments(&segs));
+        } else if name == data_name {
+            data = data_bytes.to_vec();
+            found_data = true;
+        }
+        let opts = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+        if name.ends_with('/') {
+            zw.add_directory(&name, opts).map_err(|e| e.to_string())?;
+        } else {
+            zw.start_file(&name, opts).map_err(|e| e.to_string())?;
+            zw.write_all(&data).map_err(|e| e.to_string())?;
+        }
+    }
+    if !found_data {
+        return Err(format!("找不到数据文件 {data_name}"));
+    }
+    zw.finish().map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, dst).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 pub fn save_docs(src: &str, dst: &str, docs: &[Doc]) -> Result<(), String> {
