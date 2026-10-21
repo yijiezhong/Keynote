@@ -33,6 +33,8 @@ kn set-image <src> <dst> <图片ident> <新图片>
 kn images <deck.key>
 kn links <deck.key>
 kn builds <deck.key> / builds-list
+kn set-transition <src> <dst> <page> <effect> [duration]
+kn set-build <src> <dst> <chunk-ident> [duration=2.5] [automatic=true]
 kn transitions <deck.key>
 kn audit <deck.key>
 kn check-notes <deck.key> [--require text]

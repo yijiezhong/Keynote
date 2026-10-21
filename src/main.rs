@@ -510,6 +510,8 @@ fn usage() {
     println!("  kn links <deck.key>");
     println!("  kn builds <deck.key> / builds-list");
     println!("  kn set-link <src> <dst> <ident> <url>");
+    println!("  kn set-transition <src> <dst> <页> <effect> [duration]");
+    println!("  kn set-build <src> <dst> <块ident> [duration=2.5] [automatic=true]");
     println!("  kn transitions <deck.key>");
     println!("  kn audit <deck.key>");
     println!("  kn check-notes <deck.key> [--require 文本]");
@@ -826,6 +828,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
             inspect2::set_link(&args[1], &args[2], ident, &args[4]).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("set-transition") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn set-transition <src> <dst> <页> <effect> [duration]");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            let dur = args.get(5).and_then(|s| s.parse::<f64>().ok());
+            inspect2::set_transition(&args[1], &args[2], page, &args[4], dur).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("set-build") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn set-build <src> <dst> <块ident> [duration=2.5] [automatic=true]");
+                std::process::exit(2);
+            }
+            let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
+            let mut dur = None;
+            let mut auto = None;
+            for a in &args[4..] {
+                if let Some(v) = a.strip_prefix("duration=") { dur = v.parse().ok(); }
+                if let Some(v) = a.strip_prefix("automatic=") { auto = Some(v == "true" || v == "1"); }
+            }
+            inspect2::set_build(&args[1], &args[2], ident, dur, auto).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("transitions") => {

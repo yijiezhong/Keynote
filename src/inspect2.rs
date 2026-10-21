@@ -121,3 +121,35 @@ pub fn images(path: &str) -> Result<(), String> {
     println!("共 {n} 张图片");
     Ok(())
 }
+
+
+pub fn set_transition(src: &str, dst: &str, page: usize, effect: &str, duration: Option<f64>) -> Result<(), String> {
+    let docs = write::load_docs(src)?;
+    let map = write::ident_map(&docs);
+    let ids = write::slide_node_ids(&map);
+    if page == 0 || page > ids.len() { return Err(format!("页码越界：1..{}", ids.len())); }
+    let node = <kn::SlideNodeArchive as Message>::decode(map.get(&ids[page - 1]).ok_or("节点不存在")?.1.as_slice())
+        .map_err(|e| e.to_string())?;
+    let slide_id = node.slide.as_ref().ok_or("该页没有 SlideArchive")?.identifier;
+    let (di, si, oi) = write::find_object(&docs, slide_id, "slidearchive").ok_or("找不到 SlideArchive")?;
+    let mut sa = <kn::SlideArchive as Message>::decode(docs[di].segs[si].objs[oi].as_slice())
+        .map_err(|e| e.to_string())?;
+    let attrs = sa.transition.attributes.animation_attributes.get_or_insert_with(Default::default);
+    attrs.effect = Some(effect.to_string());
+    if let Some(d) = duration { attrs.duration = Some(d); }
+    write::save_rewrite(src, dst, &docs[di].name, si, oi, &sa.encode_to_vec())?;
+    println!("第 {page} 页转场 → effect={effect} duration={}", duration.map(|d| d.to_string()).unwrap_or_else(|| "(不变)".into()));
+    Ok(())
+}
+
+pub fn set_build(src: &str, dst: &str, ident: u64, duration: Option<f64>, automatic: Option<bool>) -> Result<(), String> {
+    let docs = write::load_docs(src)?;
+    let (di, si, oi) = write::find_object(&docs, ident, "buildchunk").ok_or("找不到 BuildChunkArchive")?;
+    let mut b = <kn::BuildChunkArchive as Message>::decode(docs[di].segs[si].objs[oi].as_slice())
+        .map_err(|e| e.to_string())?;
+    if let Some(d) = duration { b.duration = Some(d); }
+    if let Some(a) = automatic { b.automatic = Some(a); }
+    write::save_rewrite(src, dst, &docs[di].name, si, oi, &b.encode_to_vec())?;
+    println!("构建块 {ident}：duration={:?} automatic={:?}", b.duration, b.automatic);
+    Ok(())
+}
