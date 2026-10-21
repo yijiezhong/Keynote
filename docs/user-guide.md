@@ -1,8 +1,8 @@
 # Keynote .key 编辑工具 —— 使用手册
-> **实现状态（Rust 阶段 1）**：本文是 kn 的目标命令参考；Rust 版当前只实现 `list` / `verify` / `info`，其余命令正在迁移。
+> **实现状态（Rust 3.0）**：56 条命令已全部迁移到 Rust；本文保留为命令参考。
 
 
-**工具**：Rust `kn`（阶段 1 只读；目标 56 条命令）+ `keynote_add_page.py`（新增页流程）
+**工具**：Rust `kn`（56 条命令）
 
 **适用**：macOS 26 / Keynote 15.4 生成的 `.key`（v14_5 schema 兼容 M6.5–M15.4）
 
