@@ -13,6 +13,7 @@ mod shape;
 mod slide;
 mod style;
 mod table;
+mod textstyle;
 mod write;
 
 macro_rules! pb_mod {
@@ -511,6 +512,8 @@ fn usage() {
     println!("  kn dup-slide <src> <dst> <页码>");
     println!("  kn set-image <src> <dst> <图片ident> <新图片>");
     println!("  kn edit <src> <dst> <iwa名|-> <旧串> <新串> [--resize]");
+    println!("  kn set-text-color <src> <dst> <页> <title|body> <#RRGGBB>");
+    println!("  kn set-text-style <src> <dst> <页> <title|body> [--size] [--bold] [--italic] [--color] [--substr]");
     println!("  kn set-bg <src> <dst> <页码> <#RRGGBB>");
     println!("  kn set-shape-geometry <src> <dst> <页> <路径> [x= y= w= h=]");
     println!("  kn styles <deck.key> [关键字]");
@@ -826,6 +829,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let hits = write::edit_text(&args[1], &args[2], &args[3], &args[4], &args[5], resize)
                 .map_err(|e| e.to_string())?;
             println!("已替换 {hits} 处，写出 {}", args[2]);
+            Ok(())
+        }
+        Some("set-text-color") => {
+            if args.len() < 6 {
+                eprintln!("用法: kn set-text-color <src> <dst> <页> <title|body> <#RRGGBB>");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            textstyle::set_color(&args[1], &args[2], page, &args[4], &args[5]).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("set-text-style") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn set-text-style <src> <dst> <页> <title|body> [--size N] [--bold] [--italic] [--color #RRGGBB] [--substr 文字]");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            let mut size = None; let mut bold = None; let mut italic = None; let mut color = None; let mut substr = None;
+            let mut i = 5usize;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--size" if i + 1 < args.len() => { size = args[i + 1].parse().ok(); i += 2; }
+                    "--bold" => { bold = Some(true); i += 1; }
+                    "--italic" => { italic = Some(true); i += 1; }
+                    "--color" if i + 1 < args.len() => { color = Some(textstyle::rgb_pub(&args[i + 1])?); i += 2; }
+                    "--substr" if i + 1 < args.len() => { substr = Some(args[i + 1].clone()); i += 2; }
+                    _ => { eprintln!("未知参数：{}", args[i]); std::process::exit(2); }
+                }
+            }
+            textstyle::apply(&args[1], &args[2], page, &args[4], size, bold, italic, color, substr.as_deref()).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("set-bg") => {
