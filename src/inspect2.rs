@@ -2,7 +2,7 @@
 use prost::Message;
 
 use crate::write;
-use crate::{kn, tswp};
+use crate::{kn, tsd, tswp};
 
 pub fn links(path: &str) -> Result<(), String> {
     let docs = write::load_docs(path)?;
@@ -89,5 +89,35 @@ pub fn set_link(src: &str, dst: &str, ident: u64, url: &str) -> Result<(), Strin
     m.url_ref = Some(url.to_string());
     write::save_rewrite(src, dst, &docs[di].name, si, oi, &m.encode_to_vec())?;
     println!("超链接 {ident} → {url}");
+    Ok(())
+}
+
+
+pub fn images(path: &str) -> Result<(), String> {
+    let docs = write::load_docs(path)?;
+    let map = write::ident_map(&docs);
+    let mut n = 0usize;
+    for (id, (_t, b)) in &map {
+        if let Ok(m) = <tsd::ImageArchive as Message>::decode(b.as_slice()) {
+            let Some(data) = m.data.as_ref() else { continue };
+            let nat = m.natural_size.as_ref()
+                .map(|s| format!("{}x{}", s.width as i64, s.height as i64))
+                .unwrap_or_else(|| "?".into());
+            let geo = m.super_.geometry.as_ref()
+                .map(|g| {
+                    let p = g.position.as_ref()
+                        .map(|p| format!("{:.0},{:.0}", p.x, p.y))
+                        .unwrap_or_else(|| "?".into());
+                    let s = g.size.as_ref()
+                        .map(|s| format!("{:.0}x{:.0}", s.width, s.height))
+                        .unwrap_or_else(|| "?".into());
+                    format!("({p}) {s}")
+                })
+                .unwrap_or_else(|| "?".into());
+            println!("{id:>10}  pos={geo:<18} natural={nat:<12} data={}", data.identifier);
+            n += 1;
+        }
+    }
+    println!("共 {n} 张图片");
     Ok(())
 }

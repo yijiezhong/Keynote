@@ -1,6 +1,6 @@
 {
   "name": "dsh-keynote",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Expose the Rust kn CLI (phase 1, read-only) to DeepSeek Harness as the keynote_kn tool.",
   "license": "MIT",
   "type": "module",

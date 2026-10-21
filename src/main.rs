@@ -2,6 +2,7 @@
 // prost-build 每个 proto package 生成一个文件，跨 package 用 super::xxx 引用
 mod apple;
 mod audit;
+mod batch;
 mod inspect2;
 mod iwa;
 mod slide;
@@ -502,6 +503,8 @@ fn usage() {
     println!("  kn set-cell <src> <dst> <ident> <行> <列> <新值>");
     println!("  kn del-slide <src> <dst> <页码>");
     println!("  kn dup-slide <src> <dst> <页码>");
+    println!("  kn batch <in-dir> <out-dir> <子命令> [参数...]");
+    println!("  kn images <deck.key>");
     println!("  kn links <deck.key>");
     println!("  kn builds <deck.key> / builds-list");
     println!("  kn set-link <src> <dst> <ident> <url>");
@@ -779,6 +782,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 apple::duplicate_slide(&args[1], &args[2], page)
             }.map_err(|e| e.to_string())?;
             println!("已写出 {}（共 {n} 页）", args[2]);
+            Ok(())
+        }
+        Some("batch") => {
+            if args.len() < 4 {
+                eprintln!("用法: kn batch <输入目录> <输出目录> <子命令> [子命令参数...]");
+                std::process::exit(2);
+            }
+            batch::run(&args[1], &args[2], &args[3], &args[4..]).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("images") => {
+            let p = args.get(1).ok_or("缺少文件")?;
+            inspect2::images(p).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("links") => {
