@@ -16,6 +16,8 @@ kn types  <deck.key>
 kn outline <deck.key>
 kn set-text   <src.key> <dst.key> <page> <title|body> <text>
 kn tables <deck.key>
+kn add-row <src> <dst> <ident> <source-row> [--at N]
+kn del-row <src> <dst> <ident> <row>
 kn set-table-size <src> <dst> <ident> [--row-height H] [--col-width W]
 kn set-cell <src.key> <dst.key> <table-ident> <row> <col> <value>
 kn skip <src.key> <dst.key> <page|1-3,7> [--off]

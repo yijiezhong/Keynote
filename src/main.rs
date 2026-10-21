@@ -493,6 +493,8 @@ fn usage() {
     println!("  kn skip <src> <dst> <页码|1-3,7> [--off]");
     println!("  kn skip-many <src> <dst> <表达式> [--off]");
     println!("  kn tables <deck.key>            列出表格 ident/行列");
+    println!("  kn add-row <src> <dst> <ident> <源行> [--at N]");
+    println!("  kn del-row <src> <dst> <ident> <行>");
     println!("  kn set-table-size <src> <dst> <ident> [--row-height H] [--col-width W]");
     println!("  kn set-cell <src> <dst> <ident> <行> <列> <新值>");
     println!("  kn insert-image-paste <src> <dst> <页码> <图片>");
@@ -692,6 +694,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some("outline") => {
             let p = args.get(1).ok_or("缺少文件")?;
             outline(p)
+        }
+        Some("add-row") | Some("del-row") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn add-row <src> <dst> <ident> <源行> [--at N] / kn del-row <src> <dst> <ident> <行>");
+                std::process::exit(2);
+            }
+            let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
+            if args[0] == "del-row" {
+                let row: u32 = args[4].parse().map_err(|_| "行不是整数")?;
+                table::del_row(&args[1], &args[2], ident, row).map_err(|e| e.to_string())?;
+            } else {
+                let source_row: u32 = args[4].parse().map_err(|_| "源行不是整数")?;
+                let at = if args.len() >= 7 && args[5] == "--at" { Some(args[6].parse().map_err(|_| "--at 不是整数")?) } else { None };
+                table::add_row(&args[1], &args[2], ident, source_row, at).map_err(|e| e.to_string())?;
+            }
+            println!("已写出 {}", args[2]);
+            Ok(())
         }
         Some("set-table-size") => {
             if args.len() < 4 {
