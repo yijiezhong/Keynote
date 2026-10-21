@@ -491,7 +491,7 @@ fn types(path: &str) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn usage() {
-    println!("kn (Rust) — Apple Keynote .key 工具，阶段 1：只读");
+    println!("kn (Rust) — Apple Keynote .key 工具（56 条命令）");
     println!();
     println!("用法：");
     println!("  kn list   <deck.key>             列出 zip 条目");
@@ -551,10 +551,11 @@ fn usage() {
     println!("  kn new <输出.key> [--theme T] [--layout L] [--title T] [--body B] [--force]");
     println!("  kn set-note <src> <dst> <页> <文本>");
     println!("  kn append-note <src> <dst> <页> <文本>（note 是别名）");
+    println!("  kn note <src> <dst> <页> <文本>");
     println!("  kn info   <deck.key>             verify 的别名");
     println!("  kn help                          显示本帮助");
     println!();
-    println!("写回与编辑命令（outline、set-text、new、add-slide 等）正在迁移。");
+    println!("写回/编辑命令与只读命令均可用；完整说明见 docs/kn-operation-guide.md。");
 }
 
 
