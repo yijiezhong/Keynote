@@ -6,6 +6,7 @@
 - 语言：Rust 2021
 - 分支：`main`
 - 代码基线：`d2c8d44`（v3.0.0 release）
+- 当前 CI 收尾提交：`5e8363e`（universal release job）
 - 当前状态：56 条命令已实现；全量回归完成；工作区干净
 - GitHub：`https://github.com/yijiezhong/Keynote`（public）
 
@@ -123,7 +124,9 @@ cargo build --release
 - Formula：`Formula/kn.rb`
 - Release：`https://github.com/yijiezhong/Keynote/releases/tag/v3.0.0`
 - 工作流：`.github/workflows/release.yml`
+- 工作流会为后续 tag 自动生成 arm64、x86_64 和 universal 三种资产
 - 预编译资产：
+  - `kn-v3.0.0-universal.tar.gz`（formula 使用）
   - `kn-v3.0.0-arm64.tar.gz`
   - `kn-v3.0.0-x86_64.tar.gz`
 
@@ -135,6 +138,14 @@ brew install yijiezhong/keynote_cli/kn
 ```
 
 注意：tap 仓库名是 `keynote_cli`，不是 `homebrew-keynote_cli`，所以 `brew tap` 要带显式 URL。
+
+已实测：
+
+```text
+brew reinstall yijiezhong/keynote_cli/kn  → 通过
+brew test  yijiezhong/keynote_cli/kn      → 通过
+brew audit --strict yijiezhong/keynote_cli/kn → 通过
+```
 
 ## GitHub 交接
 
