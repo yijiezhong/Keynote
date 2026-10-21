@@ -12,7 +12,7 @@ inserting images, and some table styling).
 
 **Rust 3.0 — all 56 commands ported.**
 
-- No Python runtime and no `kn_schema` package are required.
+- No external runtime schema package is required.
 - The public repository contains the Rust source only.
 - Write operations use `<src> <dst>` and leave the source document untouched.
 - Keynote-dependent commands still require macOS Keynote and Automation permission.
@@ -72,7 +72,7 @@ See [swift/kn-menu/README.md](swift/kn-menu/README.md) for build and `KN_BIN` no
 
 - [kn Guide — English](docs/kn-guide.en.md)
 - [kn 使用与操作指南 — 简体中文](docs/kn-guide.zh-CN.md)
-- [Format analysis report (sanitized)](docs/format-report.pdf)
+- [Format analysis report](docs/AppleKeynoteFormatReport.pdf)
 
 ## Safety
 

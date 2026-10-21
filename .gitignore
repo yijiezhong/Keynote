@@ -10,7 +10,7 @@ venv/
 *.new.bak
 # Generated PDFs / local scratch
 *.pdf
-!docs/format-report.pdf
+!docs/AppleKeynoteFormatReport.pdf
 
 target/
 swift/kn-menu/kn-menu

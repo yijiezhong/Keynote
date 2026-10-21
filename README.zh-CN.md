@@ -11,7 +11,7 @@ Keynote 本体（新建文稿、新增页、插入图片，以及部分表格样
 
 **Rust 3.0 —— 56 条命令已全部迁移。**
 
-- 不依赖 Python 运行时，也不依赖 `kn_schema` 包；
+- 不依赖外部运行时 schema 包；
 - 公开仓库只包含 Rust 实现；
 - 写操作统一使用 `<src> <dst>`，源文件保持不变；
 - 需要 Keynote 的命令仍需安装 macOS Keynote，并授予自动化权限。
@@ -70,7 +70,7 @@ cargo build --release
 
 - [kn 使用与操作指南 — 简体中文](docs/kn-guide.zh-CN.md)
 - [kn Guide — English](docs/kn-guide.en.md)
-- [格式分析报告（已脱敏）](docs/format-report.pdf)
+- [格式分析报告](docs/AppleKeynoteFormatReport.pdf)
 
 ## 安全边界
 

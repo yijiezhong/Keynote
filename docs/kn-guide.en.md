@@ -37,7 +37,7 @@ Requirements:
 - `protoc` for Keynote protobuf code generation
 - macOS Keynote for the Keynote-backed commands listed above
 
-No Python runtime and no `kn_schema` package are required.
+No external runtime schema package is required.
 
 ### Exit codes
 
@@ -389,16 +389,15 @@ Keynote-exported PNG/PDF page counts and pixels as the final check.
   not tested exhaustively.
 - **Concurrency/undo**: simultaneous edits and Keynote's per-slide undo behavior were
   not specifically validated.
-- **Distribution**: the public repository does not include real `.key` samples, a
-  Python implementation, or personal paths.
+- **Distribution**: the public repository does not include real `.key` samples or
+  personal paths.
 
 ---
 
 ## 13. Format report
 
-`docs/format-report.pdf` is a 24-page analysis of the `.key` format. It has been
-sanitized: personal attribution, internal tool names, and private template names
-were removed; example file names are generic.
+`docs/AppleKeynoteFormatReport.pdf` is a 24-page analysis of the `.key` format.
+Example file names are generic.
 
 ## License
 

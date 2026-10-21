@@ -35,7 +35,7 @@ cargo build --release
 - `protoc`（生成 Keynote protobuf 类型）
 - macOS Keynote（仅 Keynote 路径命令需要）
 
-不依赖 Python，也不需要安装 `kn_schema`。
+不依赖外部运行时 schema 包。
 
 ### 退出码
 
@@ -375,14 +375,14 @@ done
   必须用 Keynote 复核；`set-shape` 只支持纯色填充。
 - **版本**：主要在 macOS 26 / Keynote 15.4 验证；更旧版本未逐一验证。
 - **并发 / 撤销**：多人同时改写同一文件、Keynote 的逐页撤销行为未做专项验证。
-- **发布**：公开仓库不包含真实 `.key` 样本、Python 实现或个人路径。
+- **发布**：公开仓库不包含真实 `.key` 样本或个人路径。
 
 ---
 
 ## 十三、附：格式分析报告
 
-`docs/format-report.pdf` 是 `.key` 文件格式分析报告（24 页，已脱敏）。报告中的示例
-文件名为通用样例名，个人署名、内部工具名与私有模板名已移除。
+`docs/AppleKeynoteFormatReport.pdf` 是 24 页的 `.key` 文件格式分析报告。报告中的示例
+文件名为通用样例名。
 
 ## 许可证
 
