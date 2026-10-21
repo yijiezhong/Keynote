@@ -3,6 +3,7 @@
 mod apple;
 mod audit;
 mod batch;
+mod chart;
 mod color;
 mod inspect2;
 mod media;
@@ -514,6 +515,8 @@ fn usage() {
     println!("  kn set-shape-geometry <src> <dst> <页> <路径> [x= y= w= h=]");
     println!("  kn styles <deck.key> [关键字]");
     println!("  kn set-style <src> <dst> <样式ident> <属性=值>");
+    println!("  kn charts <deck.key>");
+    println!("  kn set-chart <src> <dst> <图表ident> <行> <列> <新值>");
     println!("  kn colors <deck.key>");
     println!("  kn set-color <src> <dst> <序号> <#RRGGBB> [--alpha a]");
     println!("  kn batch <in-dir> <out-dir> <子命令> [参数...]");
@@ -861,6 +864,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
             style::set_style(&args[1], &args[2], ident, &args[4]).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("charts") => {
+            let p = args.get(1).ok_or("缺少文件")?;
+            chart::list(p).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("set-chart") => {
+            if args.len() < 7 {
+                eprintln!("用法: kn set-chart <src> <dst> <图表ident> <行> <列> <新值>");
+                std::process::exit(2);
+            }
+            let id: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
+            let row: usize = args[4].parse().map_err(|_| "行不是整数")?;
+            let col: usize = args[5].parse().map_err(|_| "列不是整数")?;
+            let value: f64 = args[6].parse().map_err(|_| "值不是数字")?;
+            chart::set_chart(&args[1], &args[2], id, row, col, value).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("colors") => {
