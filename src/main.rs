@@ -3,6 +3,7 @@
 mod apple;
 mod audit;
 mod batch;
+mod color;
 mod inspect2;
 mod media;
 mod iwa;
@@ -506,6 +507,8 @@ fn usage() {
     println!("  kn dup-slide <src> <dst> <页码>");
     println!("  kn set-image <src> <dst> <图片ident> <新图片>");
     println!("  kn edit <src> <dst> <iwa名|-> <旧串> <新串> [--resize]");
+    println!("  kn colors <deck.key>");
+    println!("  kn set-color <src> <dst> <序号> <#RRGGBB> [--alpha a]");
     println!("  kn batch <in-dir> <out-dir> <子命令> [参数...]");
     println!("  kn images <deck.key>");
     println!("  kn links <deck.key>");
@@ -813,6 +816,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let hits = write::edit_text(&args[1], &args[2], &args[3], &args[4], &args[5], resize)
                 .map_err(|e| e.to_string())?;
             println!("已替换 {hits} 处，写出 {}", args[2]);
+            Ok(())
+        }
+        Some("colors") => {
+            let p = args.get(1).ok_or("缺少文件")?;
+            color::colors(p).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("set-color") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn set-color <src> <dst> <序号> <#RRGGBB> [--alpha a]");
+                std::process::exit(2);
+            }
+            let idx: usize = args[3].parse().map_err(|_| "序号不是整数")?;
+            let alpha = args.iter().position(|a| a == "--alpha").and_then(|i| args.get(i + 1)).and_then(|s| s.parse::<f32>().ok());
+            color::set_color(&args[1], &args[2], idx, &args[4], alpha).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("batch") => {
