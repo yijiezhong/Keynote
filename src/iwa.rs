@@ -398,3 +398,69 @@ pub fn ident_of(seg: &Segment) -> Option<u64> {
     }
     None
 }
+
+
+pub fn replace_deep(nodes: &mut [Node], old: &[u8], new: &[u8]) -> usize {
+    let mut hits = 0usize;
+    for n in nodes.iter_mut() {
+        let NodeValue::Bytes(b) = &mut n.value else { continue };
+        if b.as_slice() == old {
+            *b = new.to_vec();
+            hits += 1;
+            continue;
+        }
+        if !b.windows(old.len()).any(|w| w == old) { continue; }
+        if let Ok(mut sub) = pb_parse_nodes(b) {
+            let h = replace_deep(&mut sub, old, new);
+            if h > 0 {
+                *b = pb_serialize_nodes(&sub);
+                hits += h;
+                continue;
+            }
+        }
+        let c = b.windows(old.len()).filter(|w| *w == old).count();
+        if c > 0 {
+            *b = join_replace(b, old, new);
+            hits += c;
+        }
+    }
+    hits
+}
+
+fn join_replace(data: &[u8], old: &[u8], new: &[u8]) -> Vec<u8> {
+    if old.is_empty() { return data.to_vec(); }
+    let mut out = Vec::new();
+    let mut i = 0usize;
+    while i + old.len() <= data.len() {
+        if &data[i..i + old.len()] == old {
+            out.extend_from_slice(new);
+            i += old.len();
+        } else {
+            out.push(data[i]);
+            i += 1;
+        }
+    }
+    out.extend_from_slice(&data[i..]);
+    out
+}
+
+pub fn replace_payload(payload: &[u8], old: &[u8], new: &[u8]) -> Result<(Vec<u8>, usize), String> {
+    let mut segs = parse_segments(payload)?;
+    let mut hits = 0usize;
+    for seg in &mut segs {
+        for obj in &mut seg.objs {
+            if !obj.windows(old.len()).any(|w| w == old) { continue; }
+            if let Ok(mut nodes) = pb_parse_nodes(obj) {
+                let h = replace_deep(&mut nodes, old, new);
+                if h > 0 {
+                    *obj = pb_serialize_nodes(&nodes);
+                    hits += h;
+                    continue;
+                }
+            }
+            *obj = join_replace(obj, old, new);
+            hits += 1;
+        }
+    }
+    Ok((serialize_segments(&segs), hits))
+}

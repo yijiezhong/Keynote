@@ -355,3 +355,31 @@ pub fn save_rewrite(
     std::fs::rename(&tmp, dst).map_err(|e| e.to_string())?;
     Ok(())
 }
+
+
+pub fn edit_text(
+    src: &str,
+    dst: &str,
+    iwa_name: &str,
+    old: &str,
+    new: &str,
+    resize: bool,
+) -> Result<usize, String> {
+    if !resize && old.len() != new.len() {
+        return Err("未加 --resize 时只允许等长替换".into());
+    }
+    let mut docs = load_docs(src)?;
+    let mut total = 0usize;
+    for d in &mut docs {
+        if iwa_name != "-" && d.name != iwa_name { continue; }
+        let payload = iwa::serialize_segments(&d.segs);
+        let (new_payload, hits) = iwa::replace_payload(&payload, old.as_bytes(), new.as_bytes())?;
+        if hits > 0 {
+            d.segs = iwa::parse_segments(&new_payload)?;
+            total += hits;
+        }
+    }
+    if total == 0 { return Err("没有找到要替换的字符串".into()); }
+    save_docs(src, dst, &docs)?;
+    Ok(total)
+}

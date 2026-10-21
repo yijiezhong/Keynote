@@ -28,6 +28,7 @@ kn del-slide <src> <dst> <page>
 kn dup-slide <src> <dst> <page>
 kn set-link <src> <dst> <ident> <url>
 kn add-col <src> <dst> <ident> [--at N]
+kn edit <src> <dst> <iwa名|-> <旧串> <新串> [--resize]
 kn batch <in-dir> <out-dir> <子命令> [参数...]
 kn set-image <src> <dst> <图片ident> <新图片>
 kn images <deck.key>

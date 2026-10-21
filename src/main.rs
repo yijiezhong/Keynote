@@ -505,6 +505,7 @@ fn usage() {
     println!("  kn del-slide <src> <dst> <页码>");
     println!("  kn dup-slide <src> <dst> <页码>");
     println!("  kn set-image <src> <dst> <图片ident> <新图片>");
+    println!("  kn edit <src> <dst> <iwa名|-> <旧串> <新串> [--resize]");
     println!("  kn batch <in-dir> <out-dir> <子命令> [参数...]");
     println!("  kn images <deck.key>");
     println!("  kn links <deck.key>");
@@ -801,6 +802,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let p = args.get(1).ok_or("缺少文件")?;
             let ident: u64 = args.get(2).ok_or("缺少 ident")?.parse().map_err(|_| "ident 不是整数")?;
             media::image_info(p, ident).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("edit") => {
+            if args.len() < 6 {
+                eprintln!("用法: kn edit <src> <dst> <iwa名|-> <旧串> <新串> [--resize]");
+                std::process::exit(2);
+            }
+            let resize = args.iter().any(|a| a == "--resize");
+            let hits = write::edit_text(&args[1], &args[2], &args[3], &args[4], &args[5], resize)
+                .map_err(|e| e.to_string())?;
+            println!("已替换 {hits} 处，写出 {}", args[2]);
             Ok(())
         }
         Some("batch") => {
