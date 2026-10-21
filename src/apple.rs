@@ -294,3 +294,62 @@ pub fn insert_image_paste(src: &str, dst: &str, page: usize, image: &str) -> Res
     }
     Err(format!("粘贴失败：{out}"))
 }
+
+
+const DELETE_SLIDE: &str = r#"
+on run argv
+	set dstPath to item 1 of argv
+	set pageNum to (item 2 of argv) as integer
+	tell application "Keynote"
+		set d to document 1
+		delete slide pageNum of d
+		save d in POSIX file dstPath
+		set n to count of slides of d
+		close d saving no
+		return "ok:" & n
+	end tell
+end run
+"#;
+
+const DUPLICATE_SLIDE: &str = r#"
+on run argv
+	set dstPath to item 1 of argv
+	set pageNum to (item 2 of argv) as integer
+	tell application "Keynote"
+		set d to document 1
+		duplicate slide pageNum of d to after slide pageNum of d
+		save d in POSIX file dstPath
+		set n to count of slides of d
+		close d saving no
+		return "ok:" & n
+	end tell
+end run
+"#;
+
+fn open_keynote_doc(src: &str) -> Result<(), String> {
+    let src_abs = std::path::absolute(src).map_err(|e| e.to_string())?;
+    let _ = run(r#"tell application "Keynote" to close every document saving no"#, &[]);
+    let _ = Command::new("open")
+        .args(["-b", "com.apple.Keynote", &src_abs.to_string_lossy()])
+        .status();
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    Ok(())
+}
+
+fn slide_op(src: &str, dst: &str, page: usize, script: &str, op: &str) -> Result<usize, String> {
+    let dst_abs = std::path::absolute(dst).map_err(|e| e.to_string())?;
+    open_keynote_doc(src)?;
+    let out = run(script, &[dst_abs.to_string_lossy().to_string(), page.to_string()])?;
+    if let Some(rest) = out.strip_prefix("ok:") {
+        return rest.parse::<usize>().map_err(|e| e.to_string());
+    }
+    Err(format!("{op} 失败：{out}"))
+}
+
+pub fn delete_slide(src: &str, dst: &str, page: usize) -> Result<usize, String> {
+    slide_op(src, dst, page, DELETE_SLIDE, "删除页")
+}
+
+pub fn duplicate_slide(src: &str, dst: &str, page: usize) -> Result<usize, String> {
+    slide_op(src, dst, page, DUPLICATE_SLIDE, "复制页")
+}

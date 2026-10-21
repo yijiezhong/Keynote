@@ -497,6 +497,8 @@ fn usage() {
     println!("  kn del-row <src> <dst> <ident> <行>");
     println!("  kn set-table-size <src> <dst> <ident> [--row-height H] [--col-width W]");
     println!("  kn set-cell <src> <dst> <ident> <行> <列> <新值>");
+    println!("  kn del-slide <src> <dst> <页码>");
+    println!("  kn dup-slide <src> <dst> <页码>");
     println!("  kn insert-image-paste <src> <dst> <页码> <图片>");
     println!("  kn change-layout <src> <dst> <页码> <版式>");
     println!("  kn add-slide <src> <dst> <版式> [--title T] [--body B] [--after N] [--replace N]");
@@ -757,6 +759,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let col: u32 = args[5].parse().map_err(|_| "列不是整数")?;
             table::set_cell(&args[1], &args[2], ident, row, col, &args[6])
                 .map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("del-slide") | Some("dup-slide") => {
+            if args.len() < 4 {
+                eprintln!("用法: kn del-slide <src> <dst> <页码> / kn dup-slide <src> <dst> <页码>");
+                std::process::exit(2);
+            }
+            let page: usize = args[3].parse().map_err(|_| "页码不是整数")?;
+            let n = if args[0] == "del-slide" {
+                apple::delete_slide(&args[1], &args[2], page)
+            } else {
+                apple::duplicate_slide(&args[1], &args[2], page)
+            }.map_err(|e| e.to_string())?;
+            println!("已写出 {}（共 {n} 页）", args[2]);
             Ok(())
         }
         Some("insert-image-paste") => {
