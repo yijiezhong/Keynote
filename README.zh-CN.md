@@ -65,6 +65,7 @@ cargo build --release
 |---|---|---|
 | kn 使用与操作指南 | [PDF](docs/kn-guide.zh-CN.pdf) · [Markdown](docs/kn-guide.zh-CN.md) | [PDF](docs/kn-guide.en.pdf) · [Markdown](docs/kn-guide.en.md) |
 | 格式分析报告 | [PDF](docs/AppleKeynoteFormatReport.pdf) · [Markdown](docs/AppleKeynoteFormatReport.md) | [PDF](docs/AppleKeynoteFormatReport.en.pdf) · [Markdown](docs/AppleKeynoteFormatReport.en.md) |
+| 交接说明 | [中文](HANDOVER.md) | — |
 
 ## 安全边界
 
