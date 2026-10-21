@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.DS_Store
+*.key.bak
+*.new.bak
+# Generated PDFs / local scratch
+*.pdf
+
+target/
+swift/kn-menu/kn-menu

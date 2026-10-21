@@ -1,0 +1,17 @@
+[package]
+name = "kn"
+version = "0.1.0"
+edition = "2021"
+description = "A Rust CLI for reading and editing Apple Keynote .key files"
+
+[dependencies]
+snap = "1"
+prost = "0.13"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+
+[build-dependencies]
+prost-build = "0.13"
+
+[profile.release]
+opt-level = 3
+

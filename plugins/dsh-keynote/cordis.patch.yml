@@ -1,0 +1,15 @@
+# dsh-keynote bundle patch —— 往 profile 根组合里插一行宿主插件。
+#
+# 这一行让每个 session 都拿到 `keynote_kn` 工具（读写 Apple Keynote .key）。
+# 必须包在 `insert:` 里：不带 `insert:` 的 `- id: x` 会被 loader 读成「改一行已存在的配置」，
+# 找不到就静默跳过（DSH 自己报 `patch: entry "x" not found`），插件不会挂载。
+#
+# ⚠️ 本层只有在 `dsh-keynote` 被列进 profile 的 `dsh.profile.bundles` 时才会被读到。
+- insert:
+    - id: keynote
+      name: dsh-keynote
+      config:
+        # 插件默认 ~/PARA/8.Code/Keynote，也可用 KN_PROJECT_ROOT 或这里显式配置：
+        # projectRoot: /path/to/Keynote
+        # timeoutMs: 180000
+        # maxOutputChars: 40000

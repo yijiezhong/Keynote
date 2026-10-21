@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Keynote .key 编辑",
+    "description": "通过 kn 命令行读写 Apple Keynote .key：从零创建（默认苹果官方主题/布局）、页面大纲、文字、颜色、表格、形状、图片、动画与转场。"
+  }
+}
