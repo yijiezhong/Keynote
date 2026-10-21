@@ -109,3 +109,123 @@ pub fn new_deck(
     }
     Err(format!("创建失败：{}", errors.last().cloned().unwrap_or_default()))
 }
+
+
+const ADD_SLIDE: &str = r#"
+on run argv
+	set srcPath to item 1 of argv
+	set dstPath to item 2 of argv
+	set layoutName to item 3 of argv
+	set titleText to item 4 of argv
+	set bodyText to item 5 of argv
+	set afterPos to (item 6 of argv) as integer
+	set srcName to item 7 of argv
+	set replacePage to (item 8 of argv) as integer
+	tell application "Keynote"
+		set d to missing value
+		repeat with x in documents
+			if (name of x as text) is srcName then set d to x
+		end repeat
+		if d is missing value then return "ERR_NO_DOC"
+		set L to missing value
+		set names to ""
+		repeat with x in slide layouts of d
+			set nm to name of x as text
+			set names to names & nm & "|"
+			if nm is layoutName then set L to x
+		end repeat
+		if L is missing value then
+			close d saving no
+			return "ERR_NO_LAYOUT|" & names
+		end if
+		set total to count of slides of d
+		if replacePage is greater than 0 then
+			set oldSlide to slide replacePage of d
+			set oldTitle to ""
+			set oldBody to ""
+			try
+				set oldTitle to object text of default title item of oldSlide as text
+			end try
+			try
+				set oldBody to object text of default body item of oldSlide as text
+			end try
+			set s to make new slide at after slide replacePage of d with properties {base layout: L}
+			if oldTitle is not "" then
+				try
+					set object text of default title item of s to oldTitle
+				end try
+			end if
+			if oldBody is not "" then
+				try
+					set object text of default body item of s to oldBody
+				end try
+			end if
+			delete oldSlide
+		else
+			if afterPos is less than or equal to 0 or afterPos is greater than or equal to total then
+				set s to make new slide at end of slides of d with properties {base layout: L}
+			else
+				set s to make new slide at after slide afterPos of d with properties {base layout: L}
+			end if
+			if titleText is not "" then
+				try
+					set object text of default title item of s to titleText
+				end try
+			end if
+			if bodyText is not "" then
+				try
+					set object text of default body item of s to bodyText
+				end try
+			end if
+		end if
+		save d in POSIX file dstPath
+		set n to count of slides of d
+		close d saving no
+		return "OK|" & n
+	end tell
+end run
+"#;
+
+pub fn add_slide(
+    src: &str,
+    dst: &str,
+    layout: &str,
+    title: &str,
+    body: &str,
+    after: i64,
+    replace: i64,
+) -> Result<usize, String> {
+    let src_abs = std::path::absolute(src).map_err(|e| e.to_string())?;
+    let dst_abs = std::path::absolute(dst).map_err(|e| e.to_string())?;
+    let src_name = Path::new(src)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .ok_or("源路径缺少文件名")?;
+    let _ = run(r#"tell application "Keynote" to close every document saving no"#, &[]);
+    let _ = Command::new("open")
+        .args(["-b", "com.apple.Keynote", &src_abs.to_string_lossy()])
+        .status();
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    let args = vec![
+        src_abs.to_string_lossy().to_string(),
+        dst_abs.to_string_lossy().to_string(),
+        layout.to_string(),
+        title.to_string(),
+        body.to_string(),
+        after.to_string(),
+        src_name,
+        replace.to_string(),
+    ];
+    let out = run(ADD_SLIDE, &args)?;
+    if let Some(rest) = out.strip_prefix("OK|") {
+        return rest.parse::<usize>().map_err(|e| e.to_string());
+    }
+    if let Some(rest) = out.strip_prefix("ERR_NO_LAYOUT|") {
+        let names: Vec<&str> = rest.split('|').filter(|s| !s.is_empty()).collect();
+        return Err(format!("找不到版式「{layout}」；可用：{}", names.join("、")));
+    }
+    if out == "ERR_NO_DOC" {
+        return Err(format!("Keynote 未打开源文件：{src}"));
+    }
+    Err(format!("未预期返回：{out}"))
+}
