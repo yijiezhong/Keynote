@@ -1,7 +1,6 @@
 //! IWA / Snappy / protobuf byte-level primitives.
 //! Ported from the private Python reference; no Python runtime is used.
 
-use std::collections::BTreeMap;
 
 pub fn uvarint(buf: &[u8], mut i: usize) -> Result<(u64, usize), String> {
     let mut v = 0u64;
@@ -398,14 +397,4 @@ pub fn ident_of(seg: &Segment) -> Option<u64> {
         }
     }
     None
-}
-
-pub fn type_counts(segs: &[Segment]) -> BTreeMap<u64, usize> {
-    let mut m = BTreeMap::new();
-    for s in segs {
-        for (t, _) in &s.meta {
-            *m.entry(*t).or_insert(0) += 1;
-        }
-    }
-    m
 }

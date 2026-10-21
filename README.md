@@ -17,6 +17,7 @@ kn outline <deck.key>
 kn set-text   <src.key> <dst.key> <page> <title|body> <text>
 kn set-note   <src.key> <dst.key> <page> <text>
 kn append-note <src.key> <dst.key> <page> <text>
+kn new    <new.key> [--theme T] [--layout L] [--title T] [--body B]
 kn help
 ```
 
@@ -41,6 +42,7 @@ cargo build --release
 
 1. Read-only CLI: `list`, `verify`, `info`, `text`, `texts`, `types`, `outline`.
 2. File-level write: ident index, segment re-pack, atomic save; `set-text` / `set-note` / `append-note` (current).
+3. `new` (Keynote via AppleScript) is ported and usable.
 3. Table / chart / image / shape / slide commands.
 4. `new` / `add-slide` / `insert-image-paste` (Keynote via AppleScript behind the Rust CLI).
 5. Swift menu bar shell (`swift/kn-menu/`) wired to the Rust CLI.

@@ -1,5 +1,6 @@
 // D3 spike：不依赖 Python，从零读 .key 并输出与 spec-1 一致的验收数字。
 // prost-build 每个 proto package 生成一个文件，跨 package 用 super::xxx 引用
+mod apple;
 mod iwa;
 mod write;
 
@@ -487,6 +488,7 @@ fn usage() {
     println!("  kn types  <deck.key>             对象类型计数");
     println!("  kn outline <deck.key>           按页导出标题/正文");
     println!("  kn set-text <src> <dst> <页> <title|body> <文本>");
+    println!("  kn new <输出.key> [--theme T] [--layout L] [--title T] [--body B] [--force]");
     println!("  kn set-note <src> <dst> <页> <文本>");
     println!("  kn append-note <src> <dst> <页> <文本>");
     println!("  kn info   <deck.key>             verify 的别名");
@@ -680,6 +682,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some("outline") => {
             let p = args.get(1).ok_or("缺少文件")?;
             outline(p)
+        }
+        Some("new") => {
+            let mut path: Option<String> = None;
+            let mut theme: Option<String> = None;
+            let mut layout: Option<String> = None;
+            let mut title = String::new();
+            let mut body = String::new();
+            let mut force = false;
+            let mut i = 1usize;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--theme" if i + 1 < args.len() => { theme = Some(args[i + 1].clone()); i += 2; }
+                    "--layout" if i + 1 < args.len() => { layout = Some(args[i + 1].clone()); i += 2; }
+                    "--title" if i + 1 < args.len() => { title = args[i + 1].clone(); i += 2; }
+                    "--body" if i + 1 < args.len() => { body = args[i + 1].clone(); i += 2; }
+                    "--force" => { force = true; i += 1; }
+                    other => { path = Some(other.to_string()); i += 1; }
+                }
+            }
+            let Some(path) = path else {
+                eprintln!("用法: kn new <输出.key> [--theme T] [--layout L] [--title T] [--body B] [--force]");
+                std::process::exit(2);
+            };
+            let (t, l) = apple::new_deck(&path, theme.as_deref(), layout.as_deref(), &title, &body, force)
+                .map_err(|e| e.to_string())?;
+            println!("已创建 {path}");
+            println!("  主题：{t}");
+            println!("  版式：{l}（1 页）");
+            Ok(())
         }
         Some("set-note") | Some("append-note") => {
             if args.len() < 5 {
