@@ -1,7 +1,7 @@
 /**
  * dsh-keynote —— 把本仓库的 `kn` 命令行暴露成模型可调用的 `keynote_kn` 工具。
  *
- * 纯 Host 插件：注册一个工具，执行 `python3 <projectRoot>/python/keynote_iwa.py <args...>`。
+ * 纯 Host 插件：注册一个工具，执行 `<projectRoot>/bin/kn <args...>`。
  * kn 本身有 56 条命令（读结构 / 改文字 / 改表格 / 加页面 / 从零创建 …），插件只做一层薄封装：
  * 参数按数组原样传给 CLI，不经过 shell，因此文件名里的空格、引号都安全。
  *
