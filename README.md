@@ -61,12 +61,6 @@ Requirements:
 `info` is an alias of `verify`; `skip-many` is an alias-form of `skip`.
 `del-slide` accepts page expressions such as `3`, `1-3,7`, and `all`.
 
-## Swift menu bar
-
-`swift/kn-menu/` contains an AppKit menu bar shell that calls `bin/kn`. It exposes
-read-only inspections, page operations, title/note/skip writes, and full CLI help.
-See the [Swift menu bar README](swift/kn-menu/README.md) for build and `KN_BIN` notes.
-
 ## Documentation
 
 | Document | 简体中文 | English |

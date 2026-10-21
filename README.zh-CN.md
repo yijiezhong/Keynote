@@ -59,12 +59,6 @@ cargo build --release
 `info` 是 `verify` 的别名；`skip-many` 是 `skip` 的另一种入口。
 `del-slide` 支持页码表达式：`3`、`1-3,7`、`all`。
 
-## Swift 菜单栏
-
-`swift/kn-menu/` 是一个 AppKit 菜单栏壳，调用 `bin/kn`。菜单提供只读检查、页面操作、
-标题/备注/跳过写入，以及完整命令帮助。构建方式与 `KN_BIN` 说明见
-[Swift 菜单栏 README](swift/kn-menu/README.md)。
-
 ## 文档
 
 | 文档 | 简体中文 | English |
