@@ -7,7 +7,9 @@ mod color;
 mod inspect2;
 mod media;
 mod iwa;
+mod schema;
 mod slide;
+mod style;
 mod table;
 mod write;
 
@@ -507,6 +509,8 @@ fn usage() {
     println!("  kn dup-slide <src> <dst> <页码>");
     println!("  kn set-image <src> <dst> <图片ident> <新图片>");
     println!("  kn edit <src> <dst> <iwa名|-> <旧串> <新串> [--resize]");
+    println!("  kn styles <deck.key> [关键字]");
+    println!("  kn set-style <src> <dst> <样式ident> <属性=值>");
     println!("  kn colors <deck.key>");
     println!("  kn set-color <src> <dst> <序号> <#RRGGBB> [--alpha a]");
     println!("  kn batch <in-dir> <out-dir> <子命令> [参数...]");
@@ -816,6 +820,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let hits = write::edit_text(&args[1], &args[2], &args[3], &args[4], &args[5], resize)
                 .map_err(|e| e.to_string())?;
             println!("已替换 {hits} 处，写出 {}", args[2]);
+            Ok(())
+        }
+        Some("styles") => {
+            let p = args.get(1).ok_or("缺少文件")?;
+            style::styles(p, args.get(2).map(|s| s.as_str())).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("set-style") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn set-style <src> <dst> <样式ident> <font_size=48|bold=true|font_color=#RRGGBB>");
+                std::process::exit(2);
+            }
+            let ident: u64 = args[3].parse().map_err(|_| "ident 不是整数")?;
+            style::set_style(&args[1], &args[2], ident, &args[4]).map_err(|e| e.to_string())?;
             Ok(())
         }
         Some("colors") => {
