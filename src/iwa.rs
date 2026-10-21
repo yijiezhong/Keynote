@@ -99,8 +99,7 @@ pub fn snappy_decompress(src: &[u8]) -> Result<Vec<u8>, String> {
     Ok(out)
 }
 
-/// Literal-only Snappy encoder. Valid output; Keynote accepts it.
-pub fn snappy_compress(data: &[u8]) -> Vec<u8> {
+fn snappy_literal_compress(data: &[u8]) -> Vec<u8> {
     let mut out = Vec::with_capacity(data.len() + 16);
     uvarint_encode(&mut out, data.len() as u64);
     for piece in data.chunks(60) {
@@ -114,6 +113,17 @@ pub fn snappy_compress(data: &[u8]) -> Vec<u8> {
         out.extend_from_slice(piece);
     }
     out
+}
+
+/// Real raw Snappy compression, with a literal-only fallback for tiny or
+/// incompressible chunks. The fallback is still a valid raw Snappy block.
+pub fn snappy_compress(data: &[u8]) -> Vec<u8> {
+    let literal = snappy_literal_compress(data);
+    let mut encoder = snap::raw::Encoder::new();
+    match encoder.compress_vec(data) {
+        Ok(compressed) if compressed.len() < literal.len() => compressed,
+        _ => literal,
+    }
 }
 
 pub fn iwa_unwrap(blob: &[u8]) -> Result<Vec<u8>, String> {
@@ -462,4 +472,17 @@ pub fn replace_payload(payload: &[u8], old: &[u8], new: &[u8]) -> Result<(Vec<u8
         }
     }
     Ok((serialize_segments(&segs), hits))
+}
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn snappy_roundtrip_repetitive_data() {
+        let data = b"Apple Keynote IWA segment ".repeat(200);
+        let compressed = super::snappy_compress(&data);
+        assert!(compressed.len() < data.len());
+        let restored = super::snappy_decompress(&compressed).unwrap();
+        assert_eq!(restored, data);
+    }
 }
