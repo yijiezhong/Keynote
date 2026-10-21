@@ -1,7 +1,7 @@
 //! Table commands: list tables and set a numeric cell.
 use prost::Message;
 
-use crate::{schema, tsd, tsp, tss, tst, write};
+use crate::{schema, tsce, tsd, tsp, tss, tst, write};
 use crate::iwa::{Node, NodeValue};
 
 fn tables_from(docs: &[write::Doc]) -> Vec<(u64, tst::TableModelArchive)> {
@@ -414,5 +414,186 @@ pub fn set_border(src: &str, dst: &str, ident: u64, color: Option<&str>, width: 
     docs[di].segs.push(crate::iwa::Segment { ainfo, objs: vec![blob], meta: vec![(type_id, 0)] });
     write::save_docs(src, dst, &docs)?;
     println!("表格 {ident}：边框已更新（新样式 ident={new_id}）");
+    Ok(())
+}
+
+
+fn cfuuid_from_string(s: &str) -> Option<tsp::CfuuidArchive> {
+    let hex: String = s.chars().filter(|c| c.is_ascii_hexdigit()).collect();
+    if hex.len() != 32 { return None; }
+    let b: Vec<u8> = (0..16).filter_map(|i| u8::from_str_radix(&hex[i*2..i*2+2], 16).ok()).collect();
+    if b.len() != 16 { return None; }
+    Some(tsp::CfuuidArchive {
+        uuid_w0: Some(u32::from_le_bytes([b[0], b[1], b[2], b[3]])),
+        uuid_w1: Some(u32::from_le_bytes([b[4], b[5], b[6], b[7]])),
+        uuid_w2: Some(u32::from_le_bytes([b[8], b[9], b[10], b[11]])),
+        uuid_w3: Some(u32::from_le_bytes([b[12], b[13], b[14], b[15]])),
+        ..Default::default()
+    })
+}
+
+fn merge_formula(table_id: &str, r1: u32, c1: u32, r2: u32, c2: u32) -> tsce::FormulaArchive {
+    let table_uuid = cfuuid_from_string(table_id).unwrap_or_default();
+    let sticky = tsce::ast_node_array_archive::AstStickyBits {
+        begin_row_is_absolute: true, begin_column_is_absolute: true,
+        end_row_is_absolute: true, end_column_is_absolute: true,
+    };
+    let range = tsce::ast_node_array_archive::AstColonTractArchive {
+        absolute_column: vec![tsce::ast_node_array_archive::ast_colon_tract_archive::AstColonTractAbsoluteRangeArchive {
+            range_begin: c1.min(c2), range_end: Some(c1.max(c2)),
+        }],
+        absolute_row: vec![tsce::ast_node_array_archive::ast_colon_tract_archive::AstColonTractAbsoluteRangeArchive {
+            range_begin: r1.min(r2), range_end: Some(r1.max(r2)),
+        }],
+        preserve_rectangular: Some(true),
+        ..Default::default()
+    };
+    let node1 = tsce::ast_node_array_archive::AstNodeArchive {
+        ast_node_type: tsce::ast_node_array_archive::AstNodeType::ColonTractNode as i32,
+        ast_cross_table_reference_extra_info: Some(tsce::ast_node_array_archive::AstCrossTableReferenceExtraInfoArchive {
+            table_id: table_uuid, ..Default::default()
+        }),
+        ast_sticky_bits: Some(sticky),
+        ast_colon_tract: Some(range),
+        ..Default::default()
+    };
+    let node2 = tsce::ast_node_array_archive::AstNodeArchive {
+        ast_node_type: tsce::ast_node_array_archive::AstNodeType::FunctionNode as i32,
+        ast_function_node_index: Some(168),
+        ast_function_node_num_args: Some(1),
+        ..Default::default()
+    };
+    tsce::FormulaArchive {
+        ast_node_array: tsce::AstNodeArrayArchive { ast_node: vec![node1, node2] },
+        ..Default::default()
+    }
+}
+
+fn split_cells(buf: &[u8], offsets: &[u8], count: u32) -> Vec<Option<Vec<u8>>> {
+    let n = (offsets.len() / 2).min(count as usize);
+    let offs: Vec<u16> = (0..n).map(|i| u16::from_le_bytes([offsets[i*2], offsets[i*2+1]])).collect();
+    let mut cells = Vec::with_capacity(n);
+    for k in 0..n {
+        if offs[k] == 0xFFFF { cells.push(None); continue; }
+        let st = offs[k] as usize;
+        let mut en = buf.len();
+        for j in k+1..n { if offs[j] != 0xFFFF { en = offs[j] as usize; break; } }
+        if st > buf.len() || en > buf.len() || st > en { cells.push(Some(Vec::new())); }
+        else { cells.push(Some(buf[st..en].to_vec())); }
+    }
+    cells
+}
+
+fn rebuild_cells(cells: &[Option<Vec<u8>>]) -> (Vec<u8>, Vec<u8>, u32) {
+    let mut offs = vec![0xFFFFu16; cells.len()];
+    let mut buf = Vec::new();
+    let mut n = 0u32;
+    for (i, cell) in cells.iter().enumerate() {
+        let Some(c) = cell else { continue };
+        offs[i] = buf.len() as u16;
+        buf.extend_from_slice(c);
+        n += 1;
+    }
+    let mut ob = Vec::with_capacity(offs.len() * 2);
+    for v in offs { ob.extend_from_slice(&v.to_le_bytes()); }
+    (buf, ob, n)
+}
+
+fn drop_cells(buf: &[u8], offs: &[u8], count: u32, drop: &[usize]) -> (Vec<u8>, Vec<u8>, u32) {
+    let mut cells = split_cells(buf, offs, count);
+    for i in drop { if *i < cells.len() { cells[*i] = None; } }
+    rebuild_cells(&cells)
+}
+
+fn cell_text(rec: &Option<Vec<u8>>, strings: &std::collections::HashMap<u32, String>) -> String {
+    let Some(b) = rec else { return String::new(); };
+    if b.len() < 16 { return String::new(); }
+    let val = i32::from_le_bytes([b[12], b[13], b[14], b[15]]);
+    match b[1] {
+        3 => strings.get(&(val as u32)).cloned().unwrap_or_default(),
+        2 => val.to_string(),
+        _ => String::new(),
+    }
+}
+
+pub fn merge_cells(src: &str, dst: &str, ident: u64, r1: u32, c1: u32, r2: u32, c2: u32) -> Result<(), String> {
+    let mut docs = write::load_docs(src)?;
+    let map = write::ident_map(&docs);
+    let (_, tb) = map.get(&ident).ok_or(format!("找不到表格 {ident}"))?;
+    let mut tm = <tst::TableModelArchive as Message>::decode(tb.as_slice()).map_err(|_| format!("ident {ident} 不是表格"))?;
+    let rr1 = r1.min(r2); let rr2 = r1.max(r2);
+    let cc1 = c1.min(c2); let cc2 = c1.max(c2);
+    if cc2 >= tm.number_of_columns || rr2 >= tm.number_of_rows {
+        return Err(format!("合并范围越界：表为 {} 行 × {} 列", tm.number_of_rows, tm.number_of_columns));
+    }
+    let tdl_ref = tm.base_data_store.string_table.identifier;
+    let tile_ref = tm.base_data_store.tiles.tiles.first().map(|t| t.tile.identifier).ok_or("表格没有 Tile")?;
+    let mut tdl = map.get(&tdl_ref).and_then(|(_, b)| <tst::TableDataList as Message>::decode(b.as_slice()).ok());
+    let mut tile = map.get(&tile_ref).and_then(|(_, b)| <tst::Tile as Message>::decode(b.as_slice()).ok()).ok_or("找不到表格 Tile")?;
+    let strings: std::collections::HashMap<u32, String> = tdl.as_ref().map(|t| t.entries.iter().map(|e| (e.key, e.string.clone().unwrap_or_default())).collect()).unwrap_or_default();
+    let mut merged_text = String::new();
+    if tdl.is_some() {
+        let mut lines = Vec::new();
+        for ri in rr1..=rr2 {
+            let Some(row) = tile.row_infos.get(ri as usize) else { continue; };
+            let cells = split_cells(row.cell_storage_buffer.as_deref().unwrap_or(&[]), row.cell_offsets.as_deref().unwrap_or(&[]), row.cell_count);
+            let mut line = Vec::new();
+            for ci in cc1..=cc2 {
+                if let Some(c) = cells.get(ci as usize) { line.push(cell_text(c, &strings)); }
+            }
+            lines.push(line.join("\t"));
+        }
+        merged_text = lines.join("\n");
+        if !merged_text.is_empty() {
+            if let Some(t) = tdl.as_mut() {
+                let key = t.next_list_id;
+                t.entries.push(tst::table_data_list::ListEntry { key, refcount: 1, string: Some(merged_text.clone()), ..Default::default() });
+                t.next_list_id = key + 1;
+                // Point the top-left cell at the new string entry.
+                if let Some(row) = tile.row_infos.get_mut(rr1 as usize) {
+                    let mut cells = split_cells(row.cell_storage_buffer.as_deref().unwrap_or(&[]), row.cell_offsets.as_deref().unwrap_or(&[]), row.cell_count);
+                    if let Some(Some(recv)) = cells.get_mut(cc1 as usize) {
+                        if recv.len() >= 16 {
+                            recv[12..16].copy_from_slice(&(key as i32).to_le_bytes());
+                        }
+                        let (b, o, _) = rebuild_cells(&cells);
+                        row.cell_storage_buffer = Some(b);
+                        row.cell_offsets = Some(o);
+                    }
+                }
+            }
+        }
+    }
+    // Remove the merged cells from every row, preserving the slot count.
+    for ri in rr1..=rr2 {
+        let Some(row) = tile.row_infos.get_mut(ri as usize) else { continue; };
+        let drop = if ri == rr1 { (cc1+1..=cc2).map(|x| x as usize).collect::<Vec<_>>() } else { (cc1..=cc2).map(|x| x as usize).collect::<Vec<_>>() };
+        let (b, o, n) = drop_cells(row.cell_storage_buffer.as_deref().unwrap_or(&[]), row.cell_offsets.as_deref().unwrap_or(&[]), row.cell_count, &drop);
+        row.cell_storage_buffer = Some(b); row.cell_offsets = Some(o);
+        let (pb, po, _) = drop_cells(&row.cell_storage_buffer_pre_bnc, &row.cell_offsets_pre_bnc, row.cell_count, &drop);
+        row.cell_storage_buffer_pre_bnc = pb; row.cell_offsets_pre_bnc = po;
+        row.cell_count = n;
+    }
+    let formula = merge_formula(&tm.table_id, rr1, cc1, rr2, cc2);
+    let owner = tm.merge_owner.get_or_insert_with(|| tst::MergeOwnerArchive {
+        owner_id: cfuuid_from_string(&tm.table_id).unwrap_or_default(),
+        formula_store: Some(Default::default()),
+    });
+    let fs = owner.formula_store.get_or_insert_with(Default::default);
+    let fi = fs.next_formula_index;
+    fs.formulas.push(tst::formula_store_archive::FormulaStorePair { formula_index: fi, formula });
+    fs.next_formula_index = fi + 1;
+    // Write table model, tile, and string table back into their own documents.
+    let (di, si, oi) = write::find_object(&docs, ident, "").ok_or("找不到表格对象")?;
+    docs[di].segs[si].objs[oi] = tm.encode_to_vec();
+    let (di, si, oi) = write::find_object(&docs, tile_ref, "").ok_or("找不到 Tile 对象")?;
+    docs[di].segs[si].objs[oi] = tile.encode_to_vec();
+    if let Some(t) = tdl {
+        let (di, si, oi) = write::find_object(&docs, tdl_ref, "").ok_or("找不到字符串表")?;
+        docs[di].segs[si].objs[oi] = t.encode_to_vec();
+    }
+    write::save_docs(src, dst, &docs)?;
+    println!("表格 {ident}：已合并 R{}C{}:R{}C{}", rr1+1, cc1+1, rr2+1, cc2+1);
+    if !merged_text.is_empty() { println!("  文字串接：{merged_text:?}"); }
     Ok(())
 }

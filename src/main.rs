@@ -938,7 +938,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let c1: u32 = args[5].parse().map_err(|_| "c1 不是整数")?;
             let r2: u32 = args[6].parse().map_err(|_| "r2 不是整数")?;
             let c2: u32 = args[7].parse().map_err(|_| "c2 不是整数")?;
-            apple::merge_cells(&args[1], &args[2], ident, r1, c1, r2, c2).map_err(|e| e.to_string())?;
+            table::merge_cells(&args[1], &args[2], ident, r1, c1, r2, c2).map_err(|e| e.to_string())?;
             println!("已写出 {}", args[2]);
             Ok(())
         }
