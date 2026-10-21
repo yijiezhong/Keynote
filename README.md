@@ -21,6 +21,7 @@ kn skip <src.key> <dst.key> <page|1-3,7> [--off]
 kn skip-many <src.key> <dst.key> <expr> [--off]
 kn set-note   <src.key> <dst.key> <page> <text>
 kn append-note <src.key> <dst.key> <page> <text>
+kn change-layout <src.key> <dst.key> <page> <layout>
 kn add-slide <src.key> <dst.key> <layout> [--title T] [--body B] [--after N] [--replace N]
 kn new    <new.key> [--theme T] [--layout L] [--title T] [--body B]
 kn help

@@ -494,6 +494,7 @@ fn usage() {
     println!("  kn skip-many <src> <dst> <表达式> [--off]");
     println!("  kn tables <deck.key>            列出表格 ident/行列");
     println!("  kn set-cell <src> <dst> <ident> <行> <列> <新值>");
+    println!("  kn change-layout <src> <dst> <页码> <版式>");
     println!("  kn add-slide <src> <dst> <版式> [--title T] [--body B] [--after N] [--replace N]");
     println!("  kn new <输出.key> [--theme T] [--layout L] [--title T] [--body B] [--force]");
     println!("  kn set-note <src> <dst> <页> <文本>");
@@ -715,6 +716,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let col: u32 = args[5].parse().map_err(|_| "列不是整数")?;
             table::set_cell(&args[1], &args[2], ident, row, col, &args[6])
                 .map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Some("change-layout") => {
+            if args.len() < 5 {
+                eprintln!("用法: kn change-layout <src> <dst> <页码> <版式>");
+                std::process::exit(2);
+            }
+            let page: i64 = args[3].parse().map_err(|_| "页码不是整数")?;
+            let n = apple::add_slide(&args[1], &args[2], &args[4], "", "", 0, page)
+                .map_err(|e| e.to_string())?;
+            println!("已把第 {page} 页换成版式「{}」（文本已迁移），共 {n} 页", args[4]);
             Ok(())
         }
         Some("add-slide") => {

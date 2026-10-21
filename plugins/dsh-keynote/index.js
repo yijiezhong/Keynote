@@ -32,7 +32,7 @@ const DESCRIPTION = [
   '参数 `args` 是完整命令行数组，例如 `["outline","deck.key"]`、`["verify","deck.key"]`。',
   '只读：list、verify/info、text、texts、types、outline、tables。',
   '已实现写回：set-text（标题/正文）、set-note、append-note、set-cell、skip/skip-many；均为 `<src> <dst>`，源文件只读。',
-  'new（从零创建）与 add-slide（新增页）也已可用；表格/图表/形状/页面其余命令仍在迁移。取帮助用 `["help"]`。',
+  'new（从零创建）、add-slide（新增页）、change-layout（换版式）也已可用；表格/图表/形状/页面其余命令仍在迁移。取帮助用 `["help"]`。',
 ].join(' ')
 
 export function apply(ctx, config = {}) {
