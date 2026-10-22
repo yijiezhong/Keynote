@@ -8,7 +8,7 @@
 - 当前提交：以 `git log -1 --oneline` 为准
 - v3.0.0 release 基线：`d2c8d44`
 - universal release job：`5e8363e`
-- 当前状态：56 条命令已实现；全量回归完成；工作区干净
+- 当前状态：57 条命令已实现；全量回归完成；工作区干净
 - GitHub：`https://github.com/yijiezhong/Keynote`（public）
 
 ## 快速验收
@@ -30,7 +30,7 @@ cargo build --release
 
 ## 当前能力
 
-56 条命令分为：
+57 条命令分为：
 
 | 分组 | 数量 |
 |---|---:|
@@ -38,7 +38,7 @@ cargo build --release
 | 文字 / 备注 | 6 |
 | 颜色 / 形状 | 9 |
 | 表格 | 9 |
-| 图表 / 图片 / 链接 / 动画 | 8 |
+| 图表 / 图片 / 链接 / 动画 | 9 |
 | 页面结构 | 5 |
 | 批量 | 1 |
 | 从零创建 | 1 |
@@ -62,7 +62,7 @@ cargo build --release
 | `src/apple.rs` | 需要 Keynote 本体的页面/图片/表格底色操作 |
 | `src/table.rs` | 表格读写、行列、边框、底色、纯文件层合并 |
 | `src/shape.rs` | 形状填充、几何、删除/复制、打组拆组 |
-| `src/main.rs` | 56 条命令的 CLI 分发与帮助 |
+| `src/main.rs` | 57 条命令的 CLI 分发与帮助 |
 | `bin/kn` | 自动构建入口 |
 
 ## 回归结果
@@ -76,7 +76,7 @@ cargo build --release
 | 写命令检查 | 75 项通过，0 项失败 |
 | Keynote 打开验证 | 39/39 |
 | `cargo test --release` | 1/1 |
-| 文档命令清单 | 56/56 |
+| 文档命令清单 | 57/57 |
 | 文档断链 | 0 |
 | 指南 PDF 页数 | 中文 8 页；英文 9 页 |
 | 格式报告 PDF 页数 | 中文 24 页；英文 25 页 |
@@ -86,6 +86,24 @@ cargo build --release
 - `set-table-fill --no-band` 参数未实现；
 - `dup-shape` 复制表格会生成无效文件，现在明确拒绝表格与占位符；
 - 最终 `set-shape` 用私有纯色形状样本验证通过：PNG 中检测到 8,415 个绿色采样点，颜色为 `(0,170,0)`。
+- 交接验收时发现 `image-info` 已实现但未列入 help 与文档，命令数由 56 更正为 57；
+- 同时修掉 help 里 `set-table-border` / `merge-cells` / `set-table-fill` 的 3 行重复。
+
+## 交接验收记录
+
+本次交接在 `2026-10-22` 于本机逐项核对，结果如下：
+
+| 验收项 | 方法 | 结果 |
+|---|---|---|
+| 工作区与远端一致 | `git status` / `git rev-parse origin/main` | 干净；本地 `main` = `origin/main` |
+| 交接包完整性 | `shasum -a 256 -c` | 通过 |
+| 交接包内容 | 检查包内条目 | 不含 `.git` / `target` / `.key` |
+| 命令入口覆盖 | help 与 `src/main.rs` 的 `Some("...")` 对照 | 61 个入口一一对应，无重复、无遗漏 |
+| 文档命令清单 | 中英命令表合计 | 均为 57 |
+| 文档断链 | 相对链接逐个解析 | 0 |
+| 只读命令可用 | 用 `REA/samples` 私有样本跑 `verify` / `audit` / `images` / `image-info` | 均正常 |
+| 单元测试 | `cargo test --release` | 1/1 |
+| PDF 页数 | `mdls kMDItemNumberOfPages` | 指南 8/9；格式报告 24/25 |
 
 ## 已知限制
 

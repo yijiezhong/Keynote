@@ -2,7 +2,7 @@
 
 > Applies to macOS 26 / Keynote 15.4 (v14_5 schema, compatible with M6.5–M15.4)
 >
-> Status: Rust 3.0 — all 56 commands ported
+> Status: Rust 3.0 — all 57 commands ported
 >
 > Principle: normal commands read the source and write a new file; commands that
 > need Keynote's document model briefly launch Keynote
@@ -86,7 +86,7 @@ are 0-based; see the relevant sections.
 | Text / notes | 6 | `set-text` `set-text-color` `set-text-style` `note` `set-note` `edit` |
 | Color / shape | 9 | `set-bg` `set-shape` `set-color` `set-style` `set-shape-geometry` `group` `ungroup` `del-shape` `dup-shape` |
 | Table | 9 | `set-cell` `add-row` `del-row` `add-col` `del-col` `set-table-border` `set-table-fill` `set-table-size` `merge-cells` |
-| Chart / image / link / animation | 8 | `set-chart` `set-image` `insert-image` `insert-image-paste` `set-link` `add-build` `set-build` `set-transition` |
+| Chart / image / link / animation | 9 | `set-chart` `set-image` `image-info` `insert-image` `insert-image-paste` `set-link` `add-build` `set-build` `set-transition` |
 | Page structure | 5 | `add-slide` `change-layout` `del-slide` `dup-slide` `skip` |
 | Batch | 1 | `batch` |
 | Create | 1 | `new` |
@@ -244,6 +244,7 @@ always reopen the output in Keynote.
 
 # Images
 ./bin/kn images deck.key
+./bin/kn image-info deck.key 7034153
 ./bin/kn set-image in.key out.key 7031019 new.png
 ./bin/kn insert-image in.key out.key 3 new.png
 ./bin/kn insert-image-paste in.key out.key 3 new.png
@@ -263,6 +264,8 @@ always reopen the output in Keynote.
 - `insert-image` and `insert-image-paste` are performed by Keynote. The paste path
   needs Accessibility and Keynote Automation permissions.
 - `set-image` replaces the `Data/` payload and updates natural/original dimensions.
+- `image-info` reports one image's data byte count and encoded dimensions; use it to
+  confirm the target ident before replacing.
 - `add-build` uses a 0-based drawable path and requires an existing build template
   in the document.
 

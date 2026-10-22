@@ -12,7 +12,7 @@ inserting images, and some table styling).
 
 ## Status
 
-**Rust 3.0 — all 56 commands ported.**
+**Rust 3.0 — all 57 commands ported.**
 
 - No external runtime schema package is required.
 - The public repository contains the Rust source only.

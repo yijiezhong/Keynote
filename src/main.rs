@@ -491,7 +491,7 @@ fn types(path: &str) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn usage() {
-    println!("kn (Rust) — Apple Keynote .key 工具（56 条命令）");
+    println!("kn (Rust) — Apple Keynote .key 工具（57 条命令）");
     println!();
     println!("用法：");
     println!("  kn list   <deck.key>             列出 zip 条目");
@@ -519,15 +519,14 @@ fn usage() {
     println!("  kn set-text-style <src> <dst> <页> <title|body> [--size] [--bold] [--italic] [--color] [--substr]");
     println!("  kn set-table-border <src> <dst> <ident> [color=#RRGGBB width=4]");
     println!("  kn merge-cells <src> <dst> <ident> <r1> <c1> <r2> <c2>");
-    println!("  kn set-table-fill <src> <dst> <ident> [--body C] [--header C] [--band C]");    println!("  kn set-shape <src> <dst> <页> <路径> <#RRGGBB>");
+    println!("  kn set-table-fill <src> <dst> <ident> [--body C] [--header C] [--band C]");
+    println!("  kn set-shape <src> <dst> <页> <路径> <#RRGGBB>");
     println!("  kn dup-shape <src> <dst> <页> <路径> [--offset dx,dy]");
     println!("  kn group <src> <dst> <页> <路径1,路径2>");
     println!("  kn ungroup <src> <dst> <页> <组路径>");
     println!("  kn del-shape <src> <dst> <页> <路径>");
     println!("  kn set-bg <src> <dst> <页码> <#RRGGBB>");
-    println!("  kn set-table-border <src> <dst> <ident> [color=#RRGGBB width=4]");
-    println!("  kn merge-cells <src> <dst> <ident> <r1> <c1> <r2> <c2>");
-    println!("  kn set-table-fill <src> <dst> <ident> [--body C] [--header C] [--band C]");    println!("  kn set-shape-geometry <src> <dst> <页> <路径> [x= y= w= h=]");
+    println!("  kn set-shape-geometry <src> <dst> <页> <路径> [x= y= w= h=]");
     println!("  kn styles <deck.key> [关键字]");
     println!("  kn set-style <src> <dst> <样式ident> <属性=值>");
     println!("  kn charts <deck.key>");
@@ -536,8 +535,10 @@ fn usage() {
     println!("  kn set-color <src> <dst> <序号> <#RRGGBB> [--alpha a]");
     println!("  kn batch <in-dir> <out-dir> <子命令> [参数...]");
     println!("  kn images <deck.key>");
+    println!("  kn image-info <deck.key> <图片ident>   单张图片的 data 字节与编码尺寸");
     println!("  kn links <deck.key>");
-    println!("  kn builds <deck.key> / builds-list");
+    println!("  kn builds <deck.key>            列出构建块");
+    println!("  kn builds-list <deck.key>       builds 的别名");
     println!("  kn set-link <src> <dst> <ident> <url>");
     println!("  kn set-transition <src> <dst> <页> <effect> [duration]");
     println!("  kn add-build <src> <dst> <页> <路径> [effect]");

@@ -2,7 +2,7 @@
 
 > 适用：macOS 26 / Keynote 15.4（v14_5 schema，兼容 M6.5–M15.4）
 >
-> 状态：Rust 3.0，56 条命令已完成
+> 状态：Rust 3.0，57 条命令已完成
 >
 > 原则：普通命令只读源文件、写新文件；需要 Keynote 文档模型的命令会短暂调用 Keynote
 
@@ -83,7 +83,7 @@ cargo build --release
 | 文字 / 备注 | 6 | `set-text` `set-text-color` `set-text-style` `note` `set-note` `edit` |
 | 颜色 / 形状 | 9 | `set-bg` `set-shape` `set-color` `set-style` `set-shape-geometry` `group` `ungroup` `del-shape` `dup-shape` |
 | 表格 | 9 | `set-cell` `add-row` `del-row` `add-col` `del-col` `set-table-border` `set-table-fill` `set-table-size` `merge-cells` |
-| 图表 / 图片 / 链接 / 动画 | 8 | `set-chart` `set-image` `insert-image` `insert-image-paste` `set-link` `add-build` `set-build` `set-transition` |
+| 图表 / 图片 / 链接 / 动画 | 9 | `set-chart` `set-image` `image-info` `insert-image` `insert-image-paste` `set-link` `add-build` `set-build` `set-transition` |
 | 页面结构 | 5 | `add-slide` `change-layout` `del-slide` `dup-slide` `skip` |
 | 批量 | 1 | `batch` |
 | 从零创建 | 1 | `new` |
@@ -235,8 +235,9 @@ cargo build --release
 ./bin/kn charts    文件.key
 ./bin/kn set-chart 输入.key 输出.key 7031018 0 0 100
 
-# 图片：列出、替换、插入
+# 图片：列出、查看、替换、插入
 ./bin/kn images 文件.key
+./bin/kn image-info 文件.key 7034153
 ./bin/kn set-image 输入.key 输出.key 7031019 新图片.png
 ./bin/kn insert-image 输入.key 输出.key 3 新图片.png
 ./bin/kn insert-image-paste 输入.key 输出.key 3 新图片.png
@@ -256,6 +257,7 @@ cargo build --release
 - `insert-image` 与 `insert-image-paste` 都由 Keynote 完成；后者走剪贴板与 Command-V，
   需要「辅助功能」和「自动化 Keynote」权限。
 - `set-image` 替换已有图片的 `Data/` 素材，并同步 natural/original 尺寸。
+- `image-info` 显示单张图片的 data 字节数与编码尺寸，换图前先用它确认目标。
 - `add-build` 的对象路径从 0 开始，需要文件里已有可复制的构建模板。
 
 ---
