@@ -5,7 +5,7 @@
 - 项目：Apple Keynote `.key` 命令行工具
 - 语言：Rust 2021
 - 分支：`main`
-- 当前 HEAD：`55b035d`
+- 当前提交：以 `git log -1 --oneline` 为准
 - v3.0.0 release 基线：`d2c8d44`
 - universal release job：`5e8363e`
 - 当前状态：56 条命令已实现；全量回归完成；工作区干净
@@ -147,6 +147,17 @@ brew reinstall yijiezhong/keynote_cli/kn  → 通过
 brew test  yijiezhong/keynote_cli/kn      → 通过
 brew audit --strict yijiezhong/keynote_cli/kn → 通过
 ```
+
+## 源码归档
+
+交接源码包由 `git archive` 从对应提交生成：
+
+```text
+kn-handover-20261022.tar.gz
+kn-handover-20261022.sha256
+```
+
+包内不含 `.git`、`target` 和私有 `.key` 样本；解压后需先 `cargo build --release`。
 
 ## GitHub 交接
 
