@@ -104,6 +104,10 @@ cargo build --release
 | 只读命令可用 | 用 `REA/samples` 私有样本跑 `verify` / `audit` / `images` / `image-info` | 均正常 |
 | 单元测试 | `cargo test --release` | 1/1 |
 | PDF 页数 | `mdls kMDItemNumberOfPages` | 指南 8/9；格式报告 24/25 |
+| 远端同步 | `git ls-remote` + `git push` | 远端 `main` 已更新到本次交接提交 |
+| Release 资产 | GitHub API 列资产 | 3 个 tar.gz + 3 个 sha256，均非草稿 |
+| 发布二进制版本 | 下载 universal 资产跑 `kn help` | 显示 56 条（v3.0.0 时代构建，见下节说明） |
+| Tap formula 一致性 | formula `sha256` 与资产实测比对 | 一致（`397052c3…`） |
 
 ## 已知限制
 
@@ -149,6 +153,15 @@ cargo build --release
   - `kn-v3.0.0-arm64.tar.gz`
   - `kn-v3.0.0-x86_64.tar.gz`
 
+> **版本口径提醒（2026-10-22）**：`v3.0.0` 的三个预编译资产是 **56 条命令**时代构建的二进制；
+> 仓库源码已更正为 **57 条命令**（补 `image-info`）。因此：
+>
+> - `brew install` 装到的是 56 条版本的二进制，`Formula/kn.rb` 的 `test` 断言 `"56"` 与它匹配，
+>   `brew test` 仍会通过；
+> - 从源码包（`kn-handover-*.tar.gz`）自行 `cargo build` 得到的是 57 条版本；
+> - 若要让 brew 用户拿到 57 条版本，需按「后续建议」发布 `v3.0.1`，并同步把 formula 的
+>   `url` / `sha256` / `test` 断言改成新资产与新命令数。
+
 安装：
 
 ```bash
@@ -177,6 +190,13 @@ kn-handover-20261022.sha256
 
 包内不含 `.git`、`target` 和私有 `.key` 样本；解压后需先 `cargo build --release`。
 
+包由当前 `HEAD` 用 `git archive` 生成，校验方式：
+
+```bash
+shasum -a 256 -c kn-handover-20261022.sha256
+tar -tzf kn-handover-20261022.tar.gz | grep -E '(^|/)\.git/|(^|/)target/|\.key$'   # 应无输出
+```
+
 ## GitHub 交接
 
 已配置 remote 并完成首次 push：
@@ -202,12 +222,27 @@ git push origin main --tags
 # 3. 更新 tap formula 的 Release URL 与 SHA256
 ```
 
+> **本机网络提示**：GitHub 的 443 直连不可用，但本机 `127.0.0.1:1087` 的 HTTP 代理可用。
+> 本次交接的 push 用下面这条命令完成：
+>
+> ```bash
+> git -c http.proxy=http://127.0.0.1:1087 push origin main
+> ```
+>
+> 若代理端口变化，先确认 xray/V2rayU 的 HTTP 入站端口再替换。
+
+交接时已核对：默认分支 `main`、仓库 public、许可 MIT、open issues 0。
+`2026-10-22` 的交接验收提交已推送到 `origin/main`。
+
 ## 后续建议
 
-1. 在 GitHub 上确认默认分支为 `main`。
-2. 如需长期回归，补充一个可公开的纯色形状 fixture 到测试集。
-3. 发布新版本时更新 `Cargo.toml`、打新 tag，并同步更新 tap formula 的 URL/SHA。
-4. 交付前按指南执行：
+1. ~~在 GitHub 上确认默认分支为 `main`~~ —— 已确认（`default_branch: main`）。
+2. **发布 `v3.0.1` 对齐 brew 资产**：让 `brew install` 用户也能拿到 57 条命令的版本。
+   步骤是 `Cargo.toml` 改 3.0.1 → 提交 → 打 tag → push → 等 CI 出资产 →
+   更新 tap `Formula/kn.rb` 的 `url`、`sha256` 和 `test` 断言（`"56"` → `"57"`）。
+3. 如需长期回归，补充一个可公开的纯色形状 fixture 到测试集。
+4. 发布新版本时更新 `Cargo.toml`、打新 tag，并同步更新 tap formula 的 URL/SHA。
+5. 交付前按指南执行：
 
 ```bash
 ./bin/kn verify 输出.key
