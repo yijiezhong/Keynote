@@ -7,6 +7,7 @@
 - 分支：`main`
 - 当前提交：以 `git log -1 --oneline` 为准
 - v3.0.0 release 基线：`d2c8d44`
+- 当前发布版本：`v3.0.1`（57 条命令，brew 资产已对齐）
 - universal release job：`5e8363e`
 - 当前状态：57 条命令已实现；全量回归完成；工作区干净
 - GitHub：`https://github.com/yijiezhong/Keynote`（public）
@@ -105,9 +106,11 @@ cargo build --release
 | 单元测试 | `cargo test --release` | 1/1 |
 | PDF 页数 | `mdls kMDItemNumberOfPages` | 指南 8/9；格式报告 24/25 |
 | 远端同步 | `git ls-remote` + `git push` | 远端 `main` 已更新到本次交接提交 |
-| Release 资产 | GitHub API 列资产 | 3 个 tar.gz + 3 个 sha256，均非草稿 |
-| 发布二进制版本 | 下载 universal 资产跑 `kn help` | 显示 56 条（v3.0.0 时代构建，见下节说明） |
-| Tap formula 一致性 | formula `sha256` 与资产实测比对 | 一致（`397052c3…`） |
+| Release 资产 | GitHub API 列资产 | `v3.0.1` 共 6 个资产（3 tar.gz + 3 sha256），非草稿 |
+| 发布二进制版本 | 下载 `v3.0.1` universal 资产跑 `kn help` | 显示 57 条；`lipo -archs` = x86_64 arm64 |
+| 发布资产哈希 | 本地 `shasum` 与 release `.sha256` 比对 | 一致（`ebadf614…6ca5`） |
+| Tap formula 一致性 | tap 内 formula 的 `sha256` 与资产比对 | 一致；`test` 断言已改为 `"57 条命令"` |
+| brew 端到端 | `brew update` / `reinstall` / `test` / `audit --strict` | 全部通过，装到 `kn 3.0.1` |
 
 ## 已知限制
 
@@ -145,22 +148,18 @@ cargo build --release
 
 - Tap：`https://github.com/yijiezhong/keynote_cli`
 - Formula：`Formula/kn.rb`
-- Release：`https://github.com/yijiezhong/Keynote/releases/tag/v3.0.0`
+- 当前 Release：`https://github.com/yijiezhong/Keynote/releases/tag/v3.0.1`
+- 历史 Release：`https://github.com/yijiezhong/Keynote/releases/tag/v3.0.0`
 - 工作流：`.github/workflows/release.yml`
 - 工作流会为后续 tag 自动生成 arm64、x86_64 和 universal 三种资产
-- 预编译资产：
-  - `kn-v3.0.0-universal.tar.gz`（formula 使用）
-  - `kn-v3.0.0-arm64.tar.gz`
-  - `kn-v3.0.0-x86_64.tar.gz`
+- 当前预编译资产（`v3.0.1`）：
+  - `kn-v3.0.1-universal.tar.gz`（formula 使用，sha256 `ebadf614…6ca5`）
+  - `kn-v3.0.1-arm64.tar.gz`
+  - `kn-v3.0.1-x86_64.tar.gz`
 
-> **版本口径提醒（2026-10-22）**：`v3.0.0` 的三个预编译资产是 **56 条命令**时代构建的二进制；
-> 仓库源码已更正为 **57 条命令**（补 `image-info`）。因此：
->
-> - `brew install` 装到的是 56 条版本的二进制，`Formula/kn.rb` 的 `test` 断言 `"56"` 与它匹配，
->   `brew test` 仍会通过；
-> - 从源码包（`kn-handover-*.tar.gz`）自行 `cargo build` 得到的是 57 条版本；
-> - 若要让 brew 用户拿到 57 条版本，需按「后续建议」发布 `v3.0.1`，并同步把 formula 的
->   `url` / `sha256` / `test` 断言改成新资产与新命令数。
+> **版本对齐状态（2026-10-22）**：`v3.0.1` 的三个预编译资产与仓库源码一致，
+> 都是 **57 条命令**（`kn help` 首行显示「57 条命令」）。
+> `v3.0.0` 的旧资产仍是 56 条命令的二进制，已被 formula 弃用，仅作历史留存。
 
 安装：
 
@@ -171,12 +170,14 @@ brew install yijiezhong/keynote_cli/kn
 
 注意：tap 仓库名是 `keynote_cli`，不是 `homebrew-keynote_cli`，所以 `brew tap` 要带显式 URL。
 
-已实测：
+已实测（`2026-10-22`，本机在装 `kn 3.0.0` 的基础上升级）：
 
 ```text
-brew reinstall yijiezhong/keynote_cli/kn  → 通过
-brew test  yijiezhong/keynote_cli/kn      → 通过
-brew audit --strict yijiezhong/keynote_cli/kn → 通过
+brew update                                   → 通过（tap 拉取到 v3.0.1 formula）
+brew reinstall yijiezhong/keynote_cli/kn      → 通过（装到 3.0.1）
+brew test  yijiezhong/keynote_cli/kn          → 通过（退出码 0）
+brew audit --strict yijiezhong/keynote_cli/kn → 通过（退出码 0）
+kn help                                       → 「57 条命令」
 ```
 
 ## 源码归档
@@ -212,7 +213,7 @@ branch  main -> origin/main
 kn <noreply@example.com>
 ```
 
-`v3.0.0` 已打 tag 并发布。后续新版本流程：
+`v3.0.0` 与 `v3.0.1` 已打 tag 并发布。后续新版本流程：
 
 ```bash
 # 1. 更新 Cargo.toml 版本并提交
@@ -232,14 +233,13 @@ git push origin main --tags
 > 若代理端口变化，先确认 xray/V2rayU 的 HTTP 入站端口再替换。
 
 交接时已核对：默认分支 `main`、仓库 public、许可 MIT、open issues 0。
-`2026-10-22` 的交接验收提交已推送到 `origin/main`。
+`2026-10-22` 的交接验收提交已推送到 `origin/main`，`v3.0.1` 已打 tag 并发布。
 
 ## 后续建议
 
 1. ~~在 GitHub 上确认默认分支为 `main`~~ —— 已确认（`default_branch: main`）。
-2. **发布 `v3.0.1` 对齐 brew 资产**：让 `brew install` 用户也能拿到 57 条命令的版本。
-   步骤是 `Cargo.toml` 改 3.0.1 → 提交 → 打 tag → push → 等 CI 出资产 →
-   更新 tap `Formula/kn.rb` 的 `url`、`sha256` 和 `test` 断言（`"56"` → `"57"`）。
+2. ~~发布 `v3.0.1` 对齐 brew 资产~~ —— 已完成：CI 出三种资产，tap formula 的
+   `url` / `sha256` / `test` 断言均已更新，本机 `brew reinstall` 装到 `kn 3.0.1`。
 3. 如需长期回归，补充一个可公开的纯色形状 fixture 到测试集。
 4. 发布新版本时更新 `Cargo.toml`、打新 tag，并同步更新 tap formula 的 URL/SHA。
 5. 交付前按指南执行：
