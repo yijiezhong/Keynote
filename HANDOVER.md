@@ -111,6 +111,7 @@ cargo build --release
 | 发布资产哈希 | 本地 `shasum` 与 release `.sha256` 比对 | 一致（`ebadf614…6ca5`） |
 | Tap formula 一致性 | tap 内 formula 的 `sha256` 与资产比对 | 一致；`test` 断言已改为 `"57 条命令"` |
 | brew 端到端 | `brew update` / `reinstall` / `test` / `audit --strict` | 全部通过，装到 `kn 3.0.1` |
+| 交接包可独立构建 | 解压后在空 `target` 下 `cargo build --release` | 成功（约 23 秒），产物 `kn help` = 57 条、61 入口 |
 
 ## 已知限制
 
