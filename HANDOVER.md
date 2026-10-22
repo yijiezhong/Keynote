@@ -5,8 +5,9 @@
 - 项目：Apple Keynote `.key` 命令行工具
 - 语言：Rust 2021
 - 分支：`main`
-- 代码基线：`d2c8d44`（v3.0.0 release）
-- 当前 CI 收尾提交：`5e8363e`（universal release job）
+- 当前 HEAD：`55b035d`
+- v3.0.0 release 基线：`d2c8d44`
+- universal release job：`5e8363e`
 - 当前状态：56 条命令已实现；全量回归完成；工作区干净
 - GitHub：`https://github.com/yijiezhong/Keynote`（public）
 
@@ -162,11 +163,14 @@ branch  main -> origin/main
 kn <noreply@example.com>
 ```
 
-如果交接后需要打版本标签，可在确认 GitHub remote 后执行：
+`v3.0.0` 已打 tag 并发布。后续新版本流程：
 
 ```bash
-git tag -a v3.0.0 -m "kn 3.0.0"
+# 1. 更新 Cargo.toml 版本并提交
+git tag -a vX.Y.Z -m "kn X.Y.Z"
 git push origin main --tags
+# 2. GitHub Actions 自动构建 arm64 / x86_64 / universal
+# 3. 更新 tap formula 的 Release URL 与 SHA256
 ```
 
 ## 后续建议
