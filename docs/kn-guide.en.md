@@ -91,7 +91,8 @@ are 0-based; see the relevant sections.
 | Batch | 1 | `batch` |
 | Create | 1 | `new` |
 
-`info` is an alias of `verify`; `skip-many` is another entry point for `skip`.
+`info` is an alias of `verify`; `skip-many` is another entry point for `skip`;
+`note` is an alias of `append-note`; `builds-list` is an alias of `builds`.
 `del-slide` accepts page expressions such as `3`, `1-3,7`, and `all`.
 
 Write commands use `<src> <dst>` and do not overwrite the source. For commands that

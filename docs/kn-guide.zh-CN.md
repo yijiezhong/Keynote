@@ -90,7 +90,8 @@ cargo build --release
 
 补充说明：
 
-- `info` 是 `verify` 的别名；`skip-many` 是 `skip` 的表达式入口。
+- `info` 是 `verify` 的别名；`skip-many` 是 `skip` 的表达式入口；
+  `note` 是 `append-note` 的别名；`builds-list` 是 `builds` 的别名。
 - 写命令几乎都是 `<src> <dst>`，不会覆盖源文件。
 - 使用 ident 的命令，先用对应查看命令查 ident，不要猜。
 
