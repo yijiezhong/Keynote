@@ -236,6 +236,22 @@ git push origin main --tags
 交接时已核对：默认分支 `main`、仓库 public、许可 MIT、open issues 0。
 `2026-10-22` 的交接验收提交已推送到 `origin/main`，`v3.0.1` 已打 tag 并发布。
 
+## NAS 备份
+
+NAS（`NAS918`）上另有一个裸仓库作为内网备份，内容与 GitHub 一致：
+
+```text
+nas  ssh://gitcommiter@nas/volume2/gitrepos/Keynote.git
+```
+
+- 依赖 `~/.ssh/config` 里的 `Host nas` 段（密钥 `~/.ssh/dsh_nas918`），`ssh nas` 通即可推送
+- 首次创建裸仓库：
+  `ssh nas 'cd /volume2/gitrepos && git init --bare -b main Keynote.git'`
+- 日常推送：`git push nas main --tags`
+- 与 GitHub 的区别：GitHub 需经本机 `127.0.0.1:1087` 代理，NAS 直连即可
+- 已验证（`2026-10-23`）：NAS 端 `HEAD` / 分支 / `v3.0.0` / `v3.0.1` 与本地一致，
+  从 NAS 克隆后源码仍为 `3.0.1` / 57 条命令
+
 ## 后续建议
 
 1. ~~在 GitHub 上确认默认分支为 `main`~~ —— 已确认（`default_branch: main`）。
